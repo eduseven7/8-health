@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Treino" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Treino Local</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card: #161b26;
+      --border: #262c3a;
+      --text: #f0f6fc;
+      --muted: #8b949e;
+      --accent: #238636;
+      --danger: #da3633;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; padding-bottom: 80px; }
+    h1 { font-size: 1.4rem; margin-bottom: 16px; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+    input, select, button { width: 100%; padding: 12px; margin-top: 8px; border-radius: 6px; border: 1px solid var(--border); background: #0d1117; color: var(--text); font-size: 1rem; }
+    button { cursor: pointer; font-weight: 600; border: none; }
+    .btn-save { background: var(--accent); }
+    .btn-backup { background: #1f6feb; margin-top: 8px; }
+    .btn-restore { background: #30363d; margin-top: 8px; }
+    .btn-del { background: transparent; color: var(--danger); border: none; width: auto; padding: 4px; font-size: 0.85rem; }
+    .log-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+    .log-info strong { display: block; font-size: 1rem; }
+    .log-info span { color: var(--muted); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  <h1>Registro de Treino</h1>
+
+  <section class="card">
+    <label for="tipo">Categoria</label>
+    <select id="tipo">
+      <option value="Treino">Treino</option>
+      <option value="Dieta">Dieta</option>
+      <option value="Peso Corporal">Métrica Corporal</option>
+    </select>
+
+    <label for="titulo" style="margin-top: 8px; display: block;">Descrição / Exercício</label>
+    <input type="text" id="titulo" placeholder="Ex: Supino Reto ou Almoço" />
+
+    <label for="detalhe" style="margin-top: 8px; display: block;">Carga / Detalhes</label>
+    <input type="text" id="detalhe" placeholder="Ex: 4x10 - 80kg ou 200g Frango" />
+
+    <button class="btn-save" id="btnSalvar">Registrar Entrada</button>
+  </section>
+
+  <section class="card">
+    <h2>Histórico Local</h2>
+    <div id="listaRegistros"></div>
+  </section>
+
+  <section class="card">
+    <h2>Gerenciamento de Dados</h2>
+    <button class="btn-backup" id="btnExportar">Exportar Backup (.json)</button>
+    <input type="file" id="inputImportar" accept=".json" style="display: none;" />
+    <button class="btn-restore" onclick="document.getElementById('inputImportar').click()">Restaurar Backup</button>
+  </section>
+
+  <script>
+    // Registro do Service Worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+
+    // Camada de Banco de Dados Local (IndexedDB)
+    let db;
+    const request = indexedDB.open("AppTreinoDB", 1);
+
+    request.onupgradeneeded = (e) => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains("registros")) {
+        database.createObjectStore("registros", { keyPath: "id", autoIncrement: true });
+      }
+    };
+
+    request.onsuccess = (e) => {
+      db = e.target.result;
+      renderizar();
+    };
+
+    function adicionarRegistro(item) {
+      const tx = db.transaction(["registros"], "readwrite");
+      tx.objectStore("registros").add(item);
+      tx.oncomplete = () => renderizar();
+    }
+
+    function removerRegistro(id) {
+      const tx = db.transaction(["registros"], "readwrite");
+      tx.objectStore("registros").delete(id);
+      tx.oncomplete = () => renderizar();
+    }
+
+    function listarTodos() {
+      return new Promise((resolve) => {
+        const tx = db.transaction(["registros"], "readonly");
+        const store = tx.objectStore("registros");
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+      });
+    }
+
+    // Interface
+    const inputTitulo = document.getElementById("titulo");
+    const inputDetalhe = document.getElementById("detalhe");
+    const selectTipo = document.getElementById("tipo");
+    const container = document.getElementById("listaRegistros");
+
+    document.getElementById("btnSalvar").addEventListener("click", () => {
+      if (!inputTitulo.value.trim()) return;
+      adicionarRegistro({
+        tipo: selectTipo.value,
+        titulo: inputTitulo.value.trim(),
+        detalhe: inputDetalhe.value.trim(),
+        data: new Date().toISOString()
+      });
+      inputTitulo.value = "";
+      inputDetalhe.value = "";
+    });
+
+    async function renderizar() {
+      const registros = await listarTodos();
+      container.innerHTML = "";
+      registros.reverse().forEach((reg) => {
+        const item = document.createElement("div");
+        item.className = "log-item";
+        item.innerHTML = `
+          <div class="log-info">
+            <strong>${reg.titulo} [${reg.tipo}]</strong>
+            <span>${reg.detalhe} &bull; ${new Date(reg.data).toLocaleDateString("pt-BR")}</span>
+          </div>
+          <button class="btn-del" onclick="removerRegistro(${reg.id})">Excluir</button>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Exportação de Arquivo
+    document.getElementById("btnExportar").addEventListener("click", async () => {
+      const dados = await listarTodos();
+      const conteudo = JSON.stringify(dados, null, 2);
+      const filename = `backup-treino-${new Date().toISOString().slice(0, 10)}.json`;
+      const blob = new Blob([conteudo], { type: "application/json" });
+
+      // Tenta Web Share API nativa do iOS (para enviar direto aos Arquivos)
+      const file = new File([blob], filename, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: "Backup Treino" });
+          return;
+        } catch (err) {
+          if (err.name !== "AbortError") console.error(err);
+        }
+      }
+
+      // Fallback via download convencional
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Importação de Arquivo
+    document.getElementById("inputImportar").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const dados = JSON.parse(event.target.result);
+          if (!Array.isArray(dados)) throw new Error("Estrutura inválida.");
+
+          const tx = db.transaction(["registros"], "readwrite");
+          const store = tx.objectStore("registros");
+          dados.forEach((item) => {
+            delete item.id; // Permite auto-incremento contínuo
+            store.add(item);
+          });
+          tx.oncomplete = () => {
+            renderizar();
+            alert("Backup restaurado com sucesso!");
+          };
+        } catch (err) {
+          alert("Erro ao ler o arquivo JSON de backup.");
+        }
+      };
+      reader.readAsText(file);
+    });
+  </script>
+</body>
+</html>
