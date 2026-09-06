@@ -1,8 +1,28 @@
 {
-  "name": "Treino Local",
-  "short_name": "Treino",
+  "name": "8 Health",
+  "short_name": "8 Health",
+  "description": "Gerenciador de treino pessoal. Offline, sem nuvem, sem conta.",
   "start_url": "./index.html",
+  "scope": "./",
+  "id": "./",
   "display": "standalone",
-  "background_color": "#0d1117",
-  "theme_color": "#0d1117"
+  "orientation": "portrait",
+  "background_color": "#0A0C0F",
+  "theme_color": "#0A0C0F",
+  "lang": "pt-BR",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "assets/icon-1080.png",
+      "sizes": "1080x1080",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-1080.png",
+      "sizes": "1080x1080",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
 }
