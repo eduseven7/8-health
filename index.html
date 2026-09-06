@@ -34,11 +34,14 @@
   --nav-h:60px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-html,body{height:100%}
 body{
   background:var(--bg);color:var(--text);
   font:400 16px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
   overscroll-behavior-y:none;
+  /* o documento nunca pode ser mais curto que a viewport: quando é, o iOS
+     ancora a barra fixa contra uma altura menor e ela sobe do rodapé */
+  min-height:100vh;
+  min-height:100dvh;
 }
 button,input,select,textarea{font:inherit;color:inherit}
 button{background:none;border:none;cursor:pointer}
@@ -169,8 +172,11 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
   background:var(--surface);border-radius:18px 18px 0 0;border-top:1px solid var(--border);
   padding-bottom:var(--safe-b);max-width:640px;margin:0 auto;animation:up .22s cubic-bezier(.2,.8,.3,1)}
 @keyframes up{from{transform:translateY(100%)}}
-#modal .sheet-h{padding:16px 18px 12px;border-bottom:1px solid var(--border-soft)}
-#modal .sheet-b{overflow-y:auto;padding:14px 18px 20px;-webkit-overflow-scrolling:touch}
+#modal .sheet-h{padding:10px 12px 12px;border-bottom:1px solid var(--border-soft);flex:none}
+#modal .sheet-b{overflow-y:auto;padding:14px 18px 20px;-webkit-overflow-scrolling:touch;flex:1}
+#modal .sheet-h .hrow{display:flex;align-items:center;gap:6px}
+#modal .sheet-h h3{flex:1;min-width:0}
+#modal .sheet-h .extra{padding:12px 6px 2px}
 .pick{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:13px 4px;border-bottom:1px solid var(--border-soft)}
 .pick:active{background:var(--surface-2)}
 .grp-tag{font-size:.68rem;font-weight:700;color:var(--faint);letter-spacing:.05em;text-transform:uppercase;flex:none}
@@ -231,7 +237,7 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Pernas","Core","Cardio"];
 
@@ -271,6 +277,7 @@ const ICONS = {
   down:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
   trash:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9 7V4.5h6V7M6 7l1 13h10l1-13"/></svg>',
   chevron:'<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
+  close:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   arrowUp:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg>',
   prev:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
   next:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>'
@@ -899,14 +906,36 @@ function viewDados(){
 /* ============================================================
    MODAL
    ============================================================ */
-function openModal(titulo, corpo){
-  $("modalH").innerHTML = titulo;
+/* Todo modal tem botão de fechar: o toque no fundo não basta, porque o sheet
+   cobre quase toda a tela e sobra pouco fundo visível para acertar. */
+function openModal(titulo, corpo, acao, extra){
+  $("modalH").innerHTML =
+    '<div class="hrow"><button class="icon-btn" data-a="modal-close" aria-label="Fechar">' + ICONS.close + '</button>' +
+    '<h3 class="trunc">' + titulo + '</h3>' + (acao || "") + '</div>' +
+    (extra ? '<div class="extra">' + extra + '</div>' : "");
   $("modalB").innerHTML = corpo;
   $("modal").classList.add("on");
+  ajustarSheet();
 }
 function closeModal(){
   $("modal").classList.remove("on");
   $("modalB").innerHTML = "";
+  const sheet = document.querySelector("#modal .sheet");
+  if (sheet){ sheet.style.bottom = ""; sheet.style.maxHeight = ""; }
+}
+
+/* O teclado do celular não encolhe o layout viewport, só o visual viewport.
+   Sem isto, um campo no rodapé do sheet fica atrás do teclado. */
+function ajustarSheet(){
+  const vv = window.visualViewport, sheet = document.querySelector("#modal .sheet");
+  if (!vv || !sheet || !$("modal").classList.contains("on")) return;
+  const oculto = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  sheet.style.bottom = oculto + "px";
+  sheet.style.maxHeight = Math.round(vv.height * 0.92) + "px";
+}
+if (window.visualViewport){
+  window.visualViewport.addEventListener("resize", ajustarSheet);
+  window.visualViewport.addEventListener("scroll", ajustarSheet);
 }
 
 function listaPicker(filtro){
@@ -919,13 +948,13 @@ function listaPicker(filtro){
     : '<div class="empty"><p>Nenhum exercício encontrado.</p></div>';
 }
 function modalPicker(filtro){
-  openModal('<div class="row"><h3 class="grow">Escolher exercício</h3>' +
-    '<button class="btn btn-sm btn-ghost" data-a="ex-new">Novo</button></div>' +
-    '<input type="search" id="exSearch" placeholder="Buscar..." value="' + esc(filtro || "") + '" data-f="ex-search" style="margin-top:12px">',
-    listaPicker(filtro));
+  openModal("Escolher exercício",
+    listaPicker(filtro),
+    '<button class="btn btn-sm btn-ghost" data-a="ex-new">Novo</button>',
+    '<input type="search" id="exSearch" placeholder="Buscar exercício..." value="' + esc(filtro || "") + '" data-f="ex-search">');
 }
 function modalNovoEx(){
-  openModal('<h3>Novo exercício</h3>',
+  openModal("Novo exercício",
     '<div class="stack">' +
     '<div><label for="nxNome">Nome</label><input id="nxNome" type="text" placeholder="Ex: Remada Cavalinho"></div>' +
     '<div><label for="nxGrupo">Grupo muscular</label><select id="nxGrupo">' +
@@ -942,15 +971,15 @@ function modalBiblioteca(){
       l.map(e => '<div class="pick"><span class="grow trunc">' + esc(e.nome) + '</span>' +
         '<button class="icon-btn" data-a="ex-del:' + e.id + '">' + ICONS.trash + '</button></div>').join("");
   }).join("");
-  openModal('<div class="row"><h3 class="grow">Biblioteca de exercícios</h3>' +
-    '<button class="btn btn-sm btn-ghost" data-a="ex-new">Novo</button></div>', corpo);
+  openModal("Biblioteca de exercícios", corpo,
+    '<button class="btn btn-sm btn-ghost" data-a="ex-new">Novo</button>');
 }
 
 function modalFinalizar(){
   const s = sessaoAtiva();
   if (!s) return;
   const feitas = seriesFeitas(s);
-  openModal('<h3>Finalizar treino</h3>',
+  openModal("Finalizar treino",
     '<div class="stack">' +
     '<div class="row" style="gap:10px">' +
     '<div class="stat"><b>' + feitas + '</b><span>Séries feitas</span></div>' +
