@@ -237,9 +237,9 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.2.0";
 
-const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Pernas","Core","Cardio"];
+const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
 /* JS getDay(): 0=domingo .. 6=sabado. A semana do app vai de segunda a domingo. */
 const DIAS = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
@@ -248,20 +248,24 @@ const ESFORCOS = ["", "fácil", "limite", "falhei"];
 
 const SEED_EX = [
   ["Supino Reto (Barra)","Peito"],["Supino Inclinado (Halter)","Peito"],["Supino Declinado","Peito"],
-  ["Crucifixo (Máquina)","Peito"],["Crossover","Peito"],["Flexão de Braço","Peito"],
-  ["Puxada Frontal","Costas"],["Remada Curvada","Costas"],["Remada Baixa","Costas"],
-  ["Barra Fixa","Costas"],["Remada Unilateral","Costas"],["Pulldown","Costas"],
-  ["Desenvolvimento (Halter)","Ombro"],["Elevação Lateral","Ombro"],["Elevação Frontal","Ombro"],
+  ["Crucifixo (Máquina)","Peito"],["Crucifixo (Banco)","Peito"],["Crossover","Peito"],["Flexão de Braço","Peito"],
+  ["Puxada Frontal","Costas"],["Puxada Aberta","Costas"],["Remada Curvada","Costas"],["Remada Baixa","Costas"],
+  ["Remada Cavalinho","Costas"],["Barra Fixa","Costas"],["Remada Unilateral","Costas"],["Pulldown","Costas"],
+  ["Levantamento Terra","Costas"],
+  ["Desenvolvimento (Halter)","Ombro"],["Desenvolvimento Militar","Ombro"],["Desenvolvimento (Máquina)","Ombro"],
+  ["Elevação Lateral","Ombro"],["Elevação Frontal","Ombro"],
   ["Crucifixo Inverso","Ombro"],["Encolhimento","Ombro"],
   ["Rosca Direta","Bíceps"],["Rosca Alternada","Bíceps"],["Rosca Martelo","Bíceps"],
   ["Rosca Scott","Bíceps"],["Rosca Concentrada","Bíceps"],
-  ["Tríceps Corda","Tríceps"],["Tríceps Testa","Tríceps"],["Tríceps Francês","Tríceps"],
-  ["Tríceps Pulley (Barra)","Tríceps"],["Mergulho no Banco","Tríceps"],
+  ["Tríceps Corda","Tríceps"],["Tríceps Testa","Tríceps"],["Tríceps Testa (Polia)","Tríceps"],
+  ["Tríceps Francês","Tríceps"],["Tríceps Pulley (Barra)","Tríceps"],["Mergulho no Banco","Tríceps"],
+  ["Flexão de Punho","Antebraço"],["Rosca Inversa","Antebraço"],
   ["Agachamento Livre","Pernas"],["Leg Press","Pernas"],["Cadeira Extensora","Pernas"],
   ["Mesa Flexora","Pernas"],["Stiff","Pernas"],["Afundo","Pernas"],
-  ["Agachamento Búlgaro","Pernas"],["Panturrilha em Pé","Pernas"],["Cadeira Adutora","Pernas"],
-  ["Cadeira Abdutora","Pernas"],["Levantamento Terra","Pernas"],
-  ["Prancha","Core"],["Abdominal Supra","Core"],["Elevação de Pernas","Core"],["Abdominal Infra","Core"],
+  ["Agachamento Búlgaro","Pernas"],["Panturrilha em Pé","Pernas"],["Panturrilha no Leg Press","Pernas"],
+  ["Elevação Pélvica","Pernas"],["Cadeira Adutora","Pernas"],["Cadeira Abdutora","Pernas"],
+  ["Prancha","Core"],["Abdominal Supra","Core"],["Elevação de Pernas","Core"],
+  ["Abdominal Infra","Core"],["Abdominal na Polia","Core"],
   ["Esteira","Cardio"],["Bicicleta","Cardio"],["Elíptico","Cardio"],["Escada","Cardio"]
 ];
 
@@ -968,11 +972,31 @@ function modalBiblioteca(){
     const l = EXS.filter(e => e.grupo === g);
     if (!l.length) return "";
     return '<div class="section-label" style="margin:18px 0 4px">' + esc(g) + '</div>' +
-      l.map(e => '<div class="pick"><span class="grow trunc">' + esc(e.nome) + '</span>' +
-        '<button class="icon-btn" data-a="ex-del:' + e.id + '">' + ICONS.trash + '</button></div>').join("");
+      l.map(e => '<button class="pick" data-a="ex-edit:' + e.id + '">' +
+        '<span class="grow trunc">' + esc(e.nome) + '</span>' +
+        '<span class="icon-btn">' + ICONS.chevron + '</span></button>').join("");
   }).join("");
   openModal("Biblioteca de exercícios", corpo,
     '<button class="btn btn-sm btn-ghost" data-a="ex-new">Novo</button>');
+}
+
+/* Sem isto, um exercício classificado no grupo errado fica insolúvel: o volume
+   semanal vai para o músculo errado e apagar é bloqueado enquanto ele está em uso. */
+function modalEditarEx(id){
+  const e = exById(id);
+  if (!e) return;
+  const emUso = FICHAS.some(f => f.itens.some(i => i.exId === id));
+  openModal("Editar exercício",
+    '<div class="stack">' +
+    '<div><label for="edNome">Nome</label><input id="edNome" type="text" value="' + esc(e.nome) + '"></div>' +
+    '<div><label for="edGrupo">Grupo muscular</label><select id="edGrupo">' +
+    GRUPOS.map(g => '<option' + (g === e.grupo ? " selected" : "") + '>' + esc(g) + '</option>').join("") + '</select>' +
+    '<div class="ex-meta" style="margin-top:6px">Define para onde as séries contam no volume semanal.</div></div>' +
+    '<button class="btn btn-primary" data-a="ex-save:' + id + '">Salvar</button>' +
+    (emUso
+      ? '<div class="ex-meta" style="text-align:center">Em uso numa ficha, por isso não pode ser excluído.</div>'
+      : '<button class="btn btn-danger" data-a="ex-del:' + id + '">Excluir exercício</button>') +
+    '</div>');
 }
 
 function modalFinalizar(){
@@ -1291,8 +1315,18 @@ document.addEventListener("click", async ev => {
     state.draft.itens.push({ exId:+a1, series:3, repMin:8, repMax:12, carga:"", descanso:60, nota:"" });
     closeModal(); render(); return;
   }
+  if (act === "ex-edit"){ modalEditarEx(+a1); return; }
+  if (act === "ex-save"){
+    const e = exById(+a1);
+    const nome = ($("edNome").value || "").trim();
+    if (!nome){ toast("Informe o nome"); return; }
+    if (EXS.some(x => x.id !== e.id && x.nome.toLowerCase() === nome.toLowerCase())){ toast("Já existe"); return; }
+    await dbPut("exercicios", { id:e.id, nome, grupo:$("edGrupo").value });
+    await loadAll(); modalBiblioteca(); render(); toast("Exercício salvo"); return;
+  }
   if (act === "ex-del"){
     if (FICHAS.some(f => f.itens.some(i => i.exId === +a1))){ toast("Em uso em uma ficha"); return; }
+    if (!confirm("Excluir este exercício da biblioteca?")) return;
     await dbDel("exercicios", +a1);
     await loadAll(); modalBiblioteca(); return;
   }
