@@ -1,0 +1,5 @@
+# Backups pessoais nunca entram no repositório — ele é público.
+# O plano de cada pessoa vive no aparelho dela e viaja por arquivo, fora do Git.
+8health-backup-*.json
+meu-plano*.json
+*.local.json

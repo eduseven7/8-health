@@ -4,7 +4,7 @@
    - imagens e demais estáticos: cache-first
    Suba a versão abaixo a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v2";
+const VERSION = "8health-v3";
 const ASSETS = [
   "./",
   "./index.html",
