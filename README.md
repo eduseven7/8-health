@@ -56,8 +56,16 @@ Projeto estático, só caminhos relativos: funciona em subdiretório
 
 ### Publicando uma atualização
 
-O service worker é *network-first* para HTML/JS, então a atualização chega na próxima
-abertura com rede. Ao mudar arquivos, suba a constante `VERSION` em `sw.js`.
+Ao mudar arquivos, suba **duas** constantes: `VERSION` em `sw.js` (invalida o cache) e
+`APP_VERSION` em `index.html` (é o número exibido em *Dados*).
+
+Quem já tem o app instalado não precisa fazer nada: ao abrir com internet, o app detecta a
+versão nova e mostra uma barra **"Nova versão disponível → Atualizar"**. A versão nova fica
+esperando até esse toque, para nunca ser trocada no meio de um treino. O app também procura
+atualizações sempre que volta ao primeiro plano, e há um botão manual em *Dados*.
+
+> **Nunca desinstale o app para atualizar.** Atualizar preserva os dados; desinstalar os
+> apaga — no iOS, remover da Tela de Início leva o armazenamento junto.
 
 ## Estrutura
 

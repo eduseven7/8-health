@@ -60,6 +60,13 @@ label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-t
 #brandbar img{width:26px;height:26px;border-radius:7px;display:block}
 #brandbar .wordmark{font-size:.8rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
 #brandbar .today{margin-left:auto;font-size:.76rem;color:var(--faint)}
+#updbar{position:sticky;top:0;z-index:39;display:flex;align-items:center;gap:10px;
+  margin:0 18px 10px;padding:11px 14px;border-radius:var(--r-sm);
+  background:var(--brand-soft);border:1px solid rgba(252,82,82,.3);
+  font-size:.84rem;font-weight:600;max-width:604px}
+#updbar[hidden]{display:none}
+#updbar button{background:var(--brand);color:#fff;font-size:.8rem;font-weight:700;
+  padding:8px 14px;border-radius:8px;flex:none}
 main{padding:4px 18px calc(var(--nav-h) + var(--safe-b) + 30px);max-width:640px;margin:0 auto}
 
 h2{font-size:1.5rem;font-weight:700;letter-spacing:-.02em}
@@ -200,6 +207,8 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
   <span class="today" id="todayLabel"></span>
 </header>
 
+<div id="updbar" hidden></div>
+
 <main id="app"></main>
 
 <div id="restbar" hidden></div>
@@ -221,6 +230,8 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
    Dados 100% locais (IndexedDB). Nenhuma requisicao externa.
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
+
+const APP_VERSION = "1.1.0";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Pernas","Core","Cardio"];
 
@@ -873,9 +884,16 @@ function viewDados(){
     '<button class="btn btn-primary" data-a="export">Exportar backup (.json)</button>' +
     '<button class="btn btn-ghost mt" data-a="import">Restaurar backup</button></div>' +
 
+    '<div class="section-label">Versão do app</div>' +
+    '<div class="card"><div class="row"><div class="grow">' +
+    '<h3>8 Health ' + APP_VERSION + '</h3>' +
+    '<div class="ex-meta" style="margin-top:3px">Atualizações chegam sozinhas ao abrir o app com internet. ' +
+    'Atualizar <b>não apaga</b> nada — <b>desinstalar</b> o app é que apaga.</div></div></div>' +
+    '<button class="btn btn-ghost mt" data-a="app-check">Procurar atualização</button></div>' +
+
     '<div class="section-label">Zona de risco</div>' +
     '<div class="card"><button class="btn btn-danger" data-a="wipe">Apagar todos os dados</button></div>' +
-    '<p class="ex-meta" style="text-align:center;margin-top:26px">8 Health · PWA offline · dados locais</p>';
+    '<p class="ex-meta" style="text-align:center;margin-top:26px">PWA offline · dados locais</p>';
 }
 
 /* ============================================================
@@ -1268,6 +1286,10 @@ document.addEventListener("click", async ev => {
   if (act === "export"){ await exportar(); return; }
   if (act === "import"){ $("fileIn").click(); return; }
   if (act === "wipe"){ await apagarTudo(); return; }
+
+  /* app */
+  if (act === "app-update"){ aplicarAtualizacao(); return; }
+  if (act === "app-check"){ await procurarAtualizacao(); return; }
 });
 
 document.addEventListener("input", ev => {
@@ -1305,8 +1327,77 @@ $("fileIn").addEventListener("change", async ev => {
 });
 
 window.addEventListener("beforeunload", ev => {
+  if (saindoDeProposito) return;
   if (sessaoAtiva()){ ev.preventDefault(); ev.returnValue = ""; }
 });
+
+/* ============================================================
+   ATUALIZAÇÃO DO APP
+   Atualizar nunca apaga dados: o IndexedDB sobrevive a novas versões.
+   Quem apaga é DESINSTALAR o PWA — no iOS, remover da Tela de Início
+   leva o armazenamento junto. Por isso o app se atualiza sozinho.
+   ============================================================ */
+let swReg = null, recarregando = false, atualizacaoPedida = false, saindoDeProposito = false;
+
+function mostrarAtualizacao(){
+  const b = $("updbar");
+  if (!b.hidden) return;
+  b.hidden = false;
+  b.innerHTML = '<span class="grow">Nova versão disponível</span>' +
+    '<button data-a="app-update">Atualizar</button>';
+}
+
+function aplicarAtualizacao(){
+  saindoDeProposito = true;
+  if (swReg && swReg.waiting){
+    atualizacaoPedida = true;
+    swReg.waiting.postMessage({ type:"SKIP_WAITING" });
+    /* se o controllerchange não vier, recarrega assim mesmo */
+    setTimeout(() => { if (!recarregando){ recarregando = true; location.reload(); } }, 1500);
+  } else {
+    recarregando = true;
+    location.reload();
+  }
+}
+
+async function registrarSW(){
+  if (!("serviceWorker" in navigator)) return;
+  try{
+    swReg = await navigator.serviceWorker.register("sw.js");
+
+    if (swReg.waiting && navigator.serviceWorker.controller) mostrarAtualizacao();
+
+    swReg.addEventListener("updatefound", () => {
+      const novo = swReg.installing;
+      if (!novo) return;
+      novo.addEventListener("statechange", () => {
+        /* só avisa se já havia uma versão rodando — na 1ª instalação não há o que atualizar */
+        if (novo.state === "installed" && navigator.serviceWorker.controller) mostrarAtualizacao();
+      });
+    });
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!atualizacaoPedida || recarregando) return;
+      recarregando = true;
+      location.reload();
+    });
+
+    /* o PWA costuma ser retomado sem recarregar; checa ao voltar para o primeiro plano */
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible" && swReg) swReg.update().catch(() => {});
+    });
+  }catch(_){}
+}
+
+async function procurarAtualizacao(){
+  if (!swReg){ toast("Atualização automática indisponível"); return; }
+  try{
+    await swReg.update();
+    setTimeout(() => {
+      if ($("updbar").hidden) toast("Você já está na versão mais recente");
+    }, 1200);
+  }catch(_){ toast("Sem conexão para verificar"); }
+}
 
 /* ============================================================
    BOOT
@@ -1332,10 +1423,7 @@ async function seedExercicios(){
     return;
   }
   render();
-
-  if ("serviceWorker" in navigator){
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
-  }
+  registrarSW();
 })();
 </script>
 </body>

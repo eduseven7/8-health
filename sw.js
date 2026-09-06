@@ -2,9 +2,14 @@
    Estratégia:
    - navegação e código (HTML/JSON/JS): network-first, com fallback para o cache offline
    - imagens e demais estáticos: cache-first
-   Suba a versão abaixo a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v3";
+   A versão nova NÃO assume sozinha: ela fica esperando enquanto o app mostra
+   "Nova versão disponível". Quem manda ativar é o usuário, tocando em Atualizar
+   (o app envia SKIP_WAITING). Assim nada é trocado no meio de um treino.
+
+   Suba a constante VERSION a cada deploy para invalidar o cache antigo. */
+
+const VERSION = "8health-v4";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,11 +19,7 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(
-    caches.open(VERSION)
-      .then(cache => cache.addAll(ASSETS))
-      .then(() => self.skipWaiting())
-  );
+  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", event => {
@@ -29,6 +30,10 @@ self.addEventListener("activate", event => {
   );
 });
 
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+});
+
 self.addEventListener("fetch", event => {
   const req = event.request;
 
@@ -36,7 +41,8 @@ self.addEventListener("fetch", event => {
   if (new URL(req.url).origin !== self.location.origin) return;
 
   const aceita = req.headers.get("accept") || "";
-  const dinamico = req.mode === "navigate" || aceita.includes("text/html") || /\.(html|json|js|css)$/.test(new URL(req.url).pathname);
+  const dinamico = req.mode === "navigate" || aceita.includes("text/html") ||
+    /\.(html|json|js|css)$/.test(new URL(req.url).pathname);
 
   if (dinamico) {
     // network-first: sempre pega a versão nova quando há rede
