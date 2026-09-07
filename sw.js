@@ -9,7 +9,7 @@
 
    Suba a constante VERSION a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v6";
+const VERSION = "8health-v7";
 const ASSETS = [
   "./",
   "./index.html",

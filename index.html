@@ -129,27 +129,45 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
 .ex-meta{font-size:.76rem;color:var(--faint)}
 .nota{font-size:.76rem;color:var(--warn);margin-top:3px}
 
-.serie{display:flex;align-items:center;gap:7px;padding:9px 16px;border-top:1px solid var(--border-soft)}
-.serie .idx{width:16px;flex:none;font-size:.76rem;font-weight:700;color:var(--faint);font-variant-numeric:tabular-nums}
-.serie input{padding:9px 6px;text-align:center;font-variant-numeric:tabular-nums;font-weight:600}
+.serie{display:flex;align-items:center;gap:8px;padding:8px 14px;border-top:1px solid var(--border-soft)}
+.serie .idx{width:14px;flex:none;font-size:.76rem;font-weight:700;color:var(--faint);font-variant-numeric:tabular-nums}
 .serie.ok{background:rgba(63,185,80,.05)}
-.serie.ok input{border-color:rgba(63,185,80,.25);color:var(--muted)}
-.check{width:38px;height:38px;flex:none;border-radius:9px;border:1px solid var(--border);
+
+/* campo com passo: o dedo resolve sem teclado, mas o número continua tocável
+   para digitação exata quando o valor está longe */
+.np{flex:1;display:flex;align-items:center;min-width:0;background:var(--bg);
+  border:1px solid var(--border);border-radius:var(--r-sm);overflow:hidden}
+.np input{flex:1;min-width:0;border:none;background:transparent;border-radius:0;
+  padding:11px 0;text-align:center;font-variant-numeric:tabular-nums;font-weight:650;font-size:15px}
+.np input:focus{background:rgba(252,82,82,.07)}
+.np .stp{width:36px;height:42px;flex:none;display:grid;place-items:center;
+  color:var(--muted);font-size:1.2rem;font-weight:500;line-height:1}
+.np .stp:active{background:var(--surface-2);color:var(--text)}
+.np .un{font-size:.62rem;color:var(--faint);padding-right:6px;flex:none;font-weight:700}
+.serie.ok .np{border-color:rgba(63,185,80,.25)}
+.serie.ok .np input{color:var(--muted)}
+
+.check{width:42px;height:42px;flex:none;border-radius:var(--r-sm);border:1px solid var(--border);
   display:grid;place-items:center;color:var(--faint)}
 .check.on{background:var(--ok);border-color:var(--ok);color:#0A0C0F}
-.esf{width:52px;height:38px;flex:none;border-radius:9px;border:1px solid var(--border);
-  font-size:.6rem;font-weight:700;letter-spacing:.02em;color:var(--faint);text-transform:uppercase}
-.esf.e1{border-color:rgba(63,185,80,.4);color:var(--ok);background:rgba(63,185,80,.08)}
-.esf.e2{border-color:rgba(210,153,34,.45);color:var(--warn);background:rgba(210,153,34,.08)}
-.esf.e3{border-color:rgba(252,82,82,.45);color:var(--brand);background:var(--brand-soft)}
-.ex-foot{display:flex;gap:16px;padding:10px 16px;border-top:1px solid var(--border-soft)}
-.ex-foot button{font-size:.79rem;font-weight:650;color:var(--muted);padding:4px 0}
+
+.ex-esf{display:flex;align-items:center;gap:6px;padding:10px 14px;border-top:1px solid var(--border-soft)}
+.ex-esf .lb{font-size:.72rem;color:var(--faint);font-weight:650;flex:none;margin-right:2px}
+.ebtn{flex:1;padding:8px 4px;border-radius:8px;border:1px solid var(--border);
+  font-size:.75rem;font-weight:650;color:var(--faint)}
+.ebtn.on1{border-color:rgba(63,185,80,.45);color:var(--ok);background:rgba(63,185,80,.1)}
+.ebtn.on2{border-color:rgba(210,153,34,.5);color:var(--warn);background:rgba(210,153,34,.1)}
+.ebtn.on3{border-color:rgba(252,82,82,.5);color:var(--brand);background:var(--brand-soft)}
+.ex-foot{display:flex;gap:18px;padding:9px 14px;border-top:1px solid var(--border-soft)}
+.ex-foot button{font-size:.78rem;font-weight:650;color:var(--faint);padding:4px 0}
 .ex-foot button:active{color:var(--text)}
 
 #restbar{position:fixed;left:12px;right:12px;bottom:calc(var(--nav-h) + var(--safe-b) + 12px);z-index:45;
   background:var(--brand);color:#fff;border-radius:12px;padding:12px 16px;display:flex;align-items:center;
   gap:12px;box-shadow:0 8px 28px rgba(0,0,0,.45);max-width:616px;margin:0 auto}
 #restbar[hidden]{display:none}
+/* enquanto o descanso corre, o conteúdo recua para a barra não cobrir botões */
+body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
 #restbar .t{font-variant-numeric:tabular-nums;font-size:1.3rem;font-weight:700;letter-spacing:-.02em}
 #restbar .l{font-size:.76rem;font-weight:600;opacity:.85;flex:1}
 #restbar button{color:#fff;font-size:.78rem;font-weight:700;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.2)}
@@ -237,7 +255,7 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.2.0";
+const APP_VERSION = "1.3.0";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -424,15 +442,14 @@ function seriesFeitas(sess){
 }
 const seriesTotal = sess => sess.exercicios.reduce((a, e) => a + e.series.length, 0);
 
-function cargaTotal(sess){
-  let v = 0;
-  sess.exercicios.forEach(e => e.series.forEach(s => { if (s.feita) v += num(s.reps) * num(s.carga); }));
-  return v;
-}
 function ultimaExecucao(exId){
   for (const s of concluidas()){
     const e = s.exercicios.find(x => x.exId === exId && x.series.some(y => y.feita));
-    if (e) return { data:s.inicio, series:e.series.filter(y => y.feita) };
+    if (!e) continue;
+    const feitas = e.series.filter(y => y.feita);
+    /* sessões antigas guardavam o esforço por série; o do exercício tem precedência */
+    const esf = e.esforco || (feitas.length ? feitas[feitas.length - 1].esforco : "") || "";
+    return { data:s.inicio, series:feitas, esforco:esf };
   }
   return null;
 }
@@ -457,10 +474,14 @@ function horaDeSubir(exId, repMax){
   const ult = ultimaExecucao(exId);
   if (!ult || !ult.series.length) return null;
   if (!ult.series.every(s => num(s.reps) >= repMax)) return null;
-  if (ult.series[ult.series.length - 1].esforco === "falhei") return null;
+  if (ult.esforco === "falhei") return null;
   const carga = Math.max.apply(null, ult.series.map(s => num(s.carga)));
   if (!carga) return null;
-  return carga + 2.5;
+  return {
+    carga: carga + 2.5,
+    texto: "Última vez " + ult.series.length + "×" + repMax +
+           ", dá para tentar " + nKg(carga + 2.5) + " kg"
+  };
 }
 
 /* Volume: series concluidas por grupo muscular na semana, contando so o grupo
@@ -513,11 +534,13 @@ function stopRest(){
   const bar = $("restbar");
   bar.hidden = true;
   bar.innerHTML = "";
+  document.body.classList.remove("descansando");
 }
 function drawRest(){
   const left = rest.end - Date.now(), bar = $("restbar");
   if (left <= 0){ beep(); stopRest(); return; }
   bar.hidden = false;
+  document.body.classList.add("descansando");
   bar.innerHTML = '<span class="t">' + fmtClock(left) + '</span>' +
     '<span class="l">' + esc(rest.label) + '</span>' +
     '<button data-a="rest-add">+30s</button><button data-a="rest-skip">Pular</button>';
@@ -586,8 +609,12 @@ function cardFicha(f, destaque){
 /* ---------- HOJE ---------- */
 function viewHoje(){
   const feitas = concluidas();
-  const { conta } = volumeSemana(0);
+  const { conta, ini, fim } = volumeSemana(0);
   const seriesSemana = Object.keys(conta).reduce((a, g) => a + conta[g], 0);
+  const semanaTreinos = feitas.filter(s => {
+    const d = new Date(s.inicio);
+    return d >= ini && d < fim;
+  }).length;
   const hoje = fichaDoDia();
 
   let h = '<h2>Hoje</h2><p class="sub">' + esc(DIAS[new Date().getDay()]) + '</p>';
@@ -606,7 +633,7 @@ function viewHoje(){
 
   h += '<div class="row" style="gap:10px;margin-top:14px">' +
     '<div class="stat"><b>' + seriesSemana + '</b><span>Séries na semana</span></div>' +
-    '<div class="stat"><b>' + feitas.length + '</b><span>Treinos totais</span></div></div>';
+    '<div class="stat"><b>' + semanaTreinos + '</b><span>Treinos na semana</span></div></div>';
 
   const outras = FICHAS.filter(f => !hoje || f.id !== hoje.id);
   if (outras.length){
@@ -622,6 +649,31 @@ function alvoTexto(e){
   return e.series.length + "×" + (fx || "?");
 }
 
+/* Digitar rep a rep no teclado do celular, suado, é o principal atrito da tela.
+   O passo resolve no dedo; o número continua tocável para digitação exata. */
+function campoPasso(i, j, campo, valor, unidade){
+  return '<div class="np">' +
+    '<button class="stp" data-a="dec:' + i + ':' + j + ':' + campo + '" aria-label="Diminuir">−</button>' +
+    '<input type="number" inputmode="' + (campo === "carga" ? "decimal" : "numeric") + '"' +
+    (campo === "carga" ? ' step="0.5"' : "") +
+    ' placeholder="' + unidade + '" value="' + esc(valor) + '"' +
+    ' data-f="' + campo + '" data-i="' + i + '" data-j="' + j + '">' +
+    '<span class="un">' + unidade + '</span>' +
+    '<button class="stp" data-a="inc:' + i + ':' + j + ':' + campo + '" aria-label="Aumentar">+</button>' +
+    '</div>';
+}
+
+/* Um valor digitado numa série quase sempre vale para as seguintes; copiá-lo
+   evita repetir a mesma digitação três ou quatro vezes por exercício. */
+function propagar(exc, jDe, campo, valor, i){
+  for (let k = jDe + 1; k < exc.series.length; k++){
+    if (exc.series[k].feita) continue;
+    exc.series[k][campo] = valor;
+    const el = document.querySelector('input[data-f="' + campo + '"][data-i="' + i + '"][data-j="' + k + '"]');
+    if (el) el.value = valor;
+  }
+}
+
 function viewSessao(s){
   const feitas = seriesFeitas(s), total = seriesTotal(s);
   const pct = total ? Math.round(feitas / total * 100) : 0;
@@ -631,8 +683,7 @@ function viewSessao(s){
     '<h3 class="trunc">' + esc(s.nome) + '</h3></div>' +
     '<div class="timer" id="sessTimer">' + fmtClock(Date.now() - new Date(s.inicio).getTime()) + '</div></div>' +
     '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
-    '<div class="ex-meta" style="margin-top:8px">' + feitas + ' de ' + total + ' séries · ' +
-    nKg(cargaTotal(s)) + ' kg de carga total</div></div>';
+    '<div class="ex-meta" style="margin-top:8px">' + feitas + ' de ' + total + ' séries</div></div>';
 
   h += s.exercicios.map((e, i) => {
     const done = e.series.length > 0 && e.series.every(x => x.feita);
@@ -641,6 +692,7 @@ function viewSessao(s){
     const dica = "Alvo " + alvoTexto(e) + (ult
       ? " · última: " + ult.series.map(x => nKg(num(x.carga)) + "kg×" + x.reps).join(", ")
       : " · primeira vez");
+    const ei = ESFORCOS.indexOf(e.esforco || "");
 
     return '<div class="ex-card">' +
       '<div class="ex-head' + (done ? " done" : "") + '">' +
@@ -648,21 +700,25 @@ function viewSessao(s){
       '<div class="grow"><div class="trunc" style="font-weight:650">' + esc(e.nome) + '</div>' +
       '<div class="ex-meta">' + esc(dica) + '</div>' +
       (e.nota ? '<div class="nota">' + esc(e.nota) + '</div>' : "") +
-      (subir ? '<div class="pill brand" style="margin-top:6px">' + ICONS.arrowUp +
-               ' Hora de subir · tente ' + nKg(subir) + ' kg</div>' : "") +
+      (subir ? '<div class="pill brand" style="margin-top:6px">' + ICONS.arrowUp + ' ' +
+               esc(subir.texto) + '</div>' : "") +
       '</div>' +
       (e.descanso ? '<span class="pill">' + e.descanso + 's</span>' : "") + '</div>' +
-      e.series.map((sr, j) => {
-        const ei = ESFORCOS.indexOf(sr.esforco || "");
-        return '<div class="serie' + (sr.feita ? " ok" : "") + '">' +
-          '<span class="idx">' + (j + 1) + '</span>' +
-          '<input class="grow" type="number" inputmode="decimal" step="0.5" placeholder="kg" value="' + esc(sr.carga) + '" data-f="carga" data-i="' + i + '" data-j="' + j + '">' +
-          '<input class="grow" type="number" inputmode="numeric" placeholder="reps" value="' + esc(sr.reps) + '" data-f="reps" data-i="' + i + '" data-j="' + j + '">' +
-          '<button class="esf' + (ei > 0 ? " e" + ei : "") + '" data-a="esf:' + i + ':' + j + '">' +
-          (ei > 0 ? esc(ESFORCOS[ei]) : "–") + '</button>' +
-          '<button class="check' + (sr.feita ? " on" : "") + '" data-a="serie:' + i + ':' + j + '">' + ICONS.check + '</button>' +
-          '</div>';
-      }).join("") +
+
+      e.series.map((sr, j) =>
+        '<div class="serie' + (sr.feita ? " ok" : "") + '">' +
+        '<span class="idx">' + (j + 1) + '</span>' +
+        campoPasso(i, j, "carga", sr.carga, "kg") +
+        campoPasso(i, j, "reps", sr.reps, "reps") +
+        '<button class="check' + (sr.feita ? " on" : "") + '" data-a="serie:' + i + ':' + j + '" aria-label="Concluir série">' + ICONS.check + '</button>' +
+        '</div>').join("") +
+
+      '<div class="ex-esf"><span class="lb">Como foi</span>' +
+      ESFORCOS.slice(1).map((v, k) =>
+        '<button class="ebtn' + (ei === k + 1 ? " on" + (k + 1) : "") + '" data-a="esfex:' + i + ':' + k + '">' +
+        esc(v === "limite" ? "No limite" : v.charAt(0).toUpperCase() + v.slice(1)) + '</button>').join("") +
+      '</div>' +
+
       '<div class="ex-foot"><button data-a="serie-add:' + i + '">+ Série</button>' +
       (e.series.length > 1 ? '<button data-a="serie-del:' + i + '">− Série</button>' : "") +
       '</div></div>';
@@ -798,7 +854,6 @@ function viewProgresso(){
             '<div class="ex-meta">' + f.map(x => nKg(num(x.carga)) + "kg × " + esc(x.reps) +
               (x.esforco ? " (" + esc(x.esforco) + ")" : "")).join("  ·  ") + '</div></div>';
         }).join("") +
-        '<div class="ex-meta" style="margin-top:8px">Carga total: ' + nKg(cargaTotal(s)) + ' kg</div>' +
         '<button class="btn btn-danger mt" data-a="sess-del:' + s.id + '">Excluir este treino</button></div>';
     }
     return c + '</div>';
@@ -1007,7 +1062,7 @@ function modalFinalizar(){
     '<div class="stack">' +
     '<div class="row" style="gap:10px">' +
     '<div class="stat"><b>' + feitas + '</b><span>Séries feitas</span></div>' +
-    '<div class="stat"><b>' + nKg(cargaTotal(s)) + '</b><span>Carga total (kg)</span></div></div>' +
+    '<div class="stat"><b>' + fmtClock(Date.now() - new Date(s.inicio).getTime()) + '</b><span>Duração</span></div></div>' +
     (feitas ? "" : '<div class="nota">Nenhuma série foi marcada como feita.</div>') +
     '<div><label for="obs">Observação do dia (opcional)</label>' +
     '<textarea id="obs" placeholder="Ex: dormi mal, ombro incomodou no supino">' + esc(s.observacao || "") + '</textarea></div>' +
@@ -1040,8 +1095,12 @@ async function iniciarSessao(fichaId){
         nota: it.nota || "",
         repMin: it.repMin == null ? null : it.repMin,
         repMax: it.repMax == null ? null : it.repMax,
+        esforco: "",
         series: Array.from({ length: Math.max(1, it.series) }, (_, k) => ({
-          reps: ult && ult.series[k] ? ult.series[k].reps : "",
+          /* sem histórico, começa no piso da faixa: chute conservador, que nunca
+             dispara sozinho um "hora de subir" que não aconteceu */
+          reps: ult && ult.series[k] ? ult.series[k].reps
+                                     : (it.repMin == null ? "" : String(it.repMin)),
           carga: (ult && ult.series[k] ? ult.series[k].carga : it.carga) || "",
           feita: false,
           esforco: ""
@@ -1090,7 +1149,8 @@ async function finalizarSessao(){
   closeModal();
   await loadAll();
   render();
-  toast(novos.length ? "Novo recorde: " + novos[0] : "Treino concluído · " + seriesFeitas(s) + " séries");
+  toast("Treino salvo · " + seriesFeitas(s) + " séries" +
+        (novos.length ? " · melhor carga em " + novos[0] : ""));
 }
 
 async function descartarSessao(){
@@ -1217,7 +1277,7 @@ async function apagarTudo(){
 document.addEventListener("click", async ev => {
   const el = ev.target.closest("[data-a]");
   if (!el) return;
-  const [act, a1, a2] = el.dataset.a.split(":");
+  const [act, a1, a2, a3] = el.dataset.a.split(":");
 
   if (act === "tab"){ state.view = a1; state.fichaEdit = null; state.draft = null; render(); return; }
   if (act === "modal-close"){ closeModal(); return; }
@@ -1236,11 +1296,26 @@ document.addEventListener("click", async ev => {
     salvarSessao(s, true);
     return;
   }
-  if (act === "esf"){
+  if (act === "esfex"){
     const s = sessaoAtiva(); if (!s) return;
-    const sr = s.exercicios[+a1].series[+a2];
-    sr.esforco = ESFORCOS[(ESFORCOS.indexOf(sr.esforco || "") + 1) % ESFORCOS.length];
+    const exc = s.exercicios[+a1], escolhido = ESFORCOS[+a2 + 1];
+    exc.esforco = exc.esforco === escolhido ? "" : escolhido;   /* tocar de novo desmarca */
     salvarSessao(s, true);
+    return;
+  }
+  if (act === "inc" || act === "dec"){
+    const s = sessaoAtiva(); if (!s) return;
+    const i = +a1, j = +a2, campo = a3;
+    const exc = s.exercicios[i];
+    const passo = campo === "carga" ? 2.5 : 1;
+    let novo = num(exc.series[j][campo]) + (act === "inc" ? passo : -passo);
+    if (novo < 0) novo = 0;
+    const txt = campo === "carga" ? String(Math.round(novo * 10) / 10) : String(Math.round(novo));
+    exc.series[j][campo] = txt;
+    const el2 = document.querySelector('input[data-f="' + campo + '"][data-i="' + i + '"][data-j="' + j + '"]');
+    if (el2) el2.value = txt;
+    propagar(exc, j, campo, txt, i);
+    salvarSessao(s, false);
     return;
   }
   if (act === "serie-add"){
@@ -1362,7 +1437,9 @@ document.addEventListener("input", ev => {
 
   if (f === "carga" || f === "reps"){
     const s = sessaoAtiva(); if (!s) return;
-    s.exercicios[i].series[j][f] = el.value;
+    const exc = s.exercicios[i];
+    exc.series[j][f] = el.value;
+    propagar(exc, j, f, el.value, i);
     salvarSessao(s, false);
     return;
   }
