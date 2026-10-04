@@ -52,6 +52,8 @@ input,select,textarea{
 textarea{resize:vertical;min-height:88px;font-family:inherit;line-height:1.4}
 input:focus,select:focus,textarea:focus{border-color:var(--brand);background:#0D1014}
 input::placeholder,textarea::placeholder{color:var(--faint)}
+input[type="number"]{appearance:textfield;-moz-appearance:textfield}
+input::-webkit-inner-spin-button,input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 select{appearance:none;-webkit-appearance:none;padding-right:34px}
 label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
 
@@ -64,7 +66,7 @@ label{display:block;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-t
 #brandbar .wordmark{font-size:.8rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase}
 #brandbar .today{margin-left:auto;font-size:.76rem;color:var(--faint)}
 #updbar{position:sticky;top:0;z-index:39;display:flex;align-items:center;gap:10px;
-  margin:0 18px 10px;padding:11px 14px;border-radius:var(--r-sm);
+  width:calc(100% - 36px);margin:0 auto 10px;padding:11px 14px;border-radius:var(--r-sm);
   background:var(--brand-soft);border:1px solid rgba(252,82,82,.3);
   font-size:.84rem;font-weight:600;max-width:604px}
 #updbar[hidden]{display:none}
@@ -101,6 +103,25 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
   font-weight:700;letter-spacing:.03em;background:var(--surface-2);color:var(--muted);flex:none}
 .pill.brand{background:var(--brand-soft);color:var(--brand)}
 .pill.ok{background:rgba(63,185,80,.13);color:var(--ok)}
+.pill.brand{white-space:normal;max-width:100%;overflow-wrap:anywhere}
+.save-state{font-size:.76rem;color:var(--muted);margin-top:10px}
+#saveRetry[hidden]{display:none}
+.draft-status{font-size:.78rem;color:var(--muted);margin:0 0 14px}
+.history-filter-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.history-filter-grid>div{min-width:0}
+.history-filter-grid select,.history-filter-grid input{min-width:0;max-width:100%;text-overflow:ellipsis}
+.history-filter-grid input[type="date"]{min-height:47px}
+@media(max-width:440px){
+  .history-filter-grid{grid-template-columns:minmax(0,1fr)}
+  .history-filter-grid.history-dates{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+.history-count{margin:0 0 12px}
+.history-session-toggle{width:100%;text-align:left}
+.history-details{margin-top:12px;border-top:1px solid var(--border-soft);padding-top:10px;overflow-wrap:anywhere}
+.history-details[hidden]{display:none}
+.history-exercise{padding:6px 0}
+.history-exercise-name{font-weight:600;font-size:.92rem}
+button:disabled{opacity:.55;cursor:wait}
 
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
 .empty p{font-size:.9rem;margin-bottom:18px}
@@ -144,6 +165,11 @@ h3{font-size:1.02rem;font-weight:650;letter-spacing:-.01em}
   color:var(--muted);font-size:1.2rem;font-weight:500;line-height:1}
 .np .stp:active{background:var(--surface-2);color:var(--text)}
 .np .un{font-size:.62rem;color:var(--faint);padding-right:6px;flex:none;font-weight:700}
+@media(max-width:440px){
+  .np .stp{width:25px}
+  .np input{font-size:14px}
+  .np .un{font-size:9px;padding-right:4px}
+}
 .serie.ok .np{border-color:rgba(63,185,80,.25)}
 .serie.ok .np input{color:var(--muted)}
 
@@ -172,16 +198,6 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
 #restbar .l{font-size:.76rem;font-weight:600;opacity:.85;flex:1}
 #restbar button{color:#fff;font-size:.78rem;font-weight:700;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,.2)}
 
-.item{display:flex;align-items:flex-start;gap:10px;padding:14px 0;border-bottom:1px solid var(--border-soft)}
-.item:last-child{border-bottom:none}
-.handle{display:flex;flex-direction:column;gap:2px;flex:none;margin-top:2px}
-.handle button{width:26px;height:20px;display:grid;place-items:center;color:var(--faint);border-radius:5px}
-.handle button:active{background:var(--surface-2);color:var(--text)}
-.mini-grid{display:grid;grid-template-columns:.8fr 1.3fr 1fr 1fr;gap:8px;margin-top:10px}
-.mini-grid label{font-size:.62rem;margin-bottom:4px;letter-spacing:.04em}
-.mini-grid input{padding:9px 4px;text-align:center;font-weight:600}
-.faixa{display:flex;align-items:center;gap:4px}
-.faixa span{color:var(--faint);font-size:.8rem;flex:none}
 
 #modal{position:fixed;inset:0;z-index:80;display:none}
 #modal.on{display:block}
@@ -222,30 +238,39 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
   padding:11px 18px;border-radius:99px;font-size:.85rem;font-weight:600;max-width:88vw;text-align:center;
   box-shadow:0 8px 24px rgba(0,0,0,.5)}
 </style>
+<link rel="stylesheet" href="styles/layout.css">
 </head>
 <body>
 
-<header id="brandbar">
+<header id="brandbar" data-testid="app-header">
   <img src="assets/favicon.png" alt="">
   <span class="wordmark">8 Health</span>
   <span class="today" id="todayLabel"></span>
 </header>
 
-<div id="updbar" hidden></div>
+<div id="updbar" data-testid="app-update-banner" hidden></div>
 
-<main id="app"></main>
-
-<div id="restbar" hidden></div>
-
-<nav id="tabbar"></nav>
-
-<div id="modal">
-  <div class="bd" data-a="modal-close"></div>
-  <div class="sheet"><div class="sheet-h" id="modalH"></div><div class="sheet-b" id="modalB"></div></div>
+<div id="contentViewport" data-testid="content-scroll-region" tabindex="0" role="region" aria-label="Conteúdo da área selecionada">
+  <main id="app" data-testid="app-content"></main>
 </div>
 
-<input type="file" id="fileIn" accept="application/json,.json" hidden>
+<div id="restbar" data-testid="rest-timer-bar" hidden></div>
 
+<nav id="tabbar" data-testid="app-navigation"></nav>
+
+<div id="modal" data-testid="app-modal">
+  <div class="bd" data-a="modal-close"></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle"><div class="sheet-h" id="modalH"></div><div class="sheet-b" id="modalB"></div></div>
+</div>
+
+<input type="file" id="fileIn" data-testid="backup-file-input" accept="application/json,.json" hidden>
+
+<script src="scripts/storage.js"></script>
+<script src="scripts/progress.js"></script>
+<script src="scripts/backup.js"></script>
+<script src="scripts/plans.js"></script>
+<script src="scripts/history.js"></script>
+<script src="scripts/plan-fields.js"></script>
 <script>
 "use strict";
 
@@ -255,7 +280,7 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.5.2";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -310,7 +335,7 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const num = v => { const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : 0; };
 const pad2 = n => String(n).padStart(2, "0");
-const nKg = v => (Math.round(v * 10) / 10).toString().replace(".", ",");
+const nKg = v => (Math.round(v * 100) / 100).toString().replace(".", ",");
 
 function fmtClock(ms){
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -334,6 +359,8 @@ function toast(msg){
   if (old) old.remove();
   const el = document.createElement("div");
   el.className = "toast";
+  el.dataset.testid = "app-toast";
+  el.setAttribute("role", "status");
   el.textContent = msg;
   document.body.appendChild(el);
   clearTimeout(toastTimer);
@@ -413,18 +440,16 @@ function migrarV1paraV2(tx){
   };
 }
 
-const pr = req => new Promise((res, rej) => { req.onsuccess = () => res(req.result); req.onerror = () => rej(req.error); });
-const dbAll = s => pr(db.transaction(s, "readonly").objectStore(s).getAll());
-const dbPut = (s, v) => pr(db.transaction(s, "readwrite").objectStore(s).put(v));
-const dbAdd = (s, v) => pr(db.transaction(s, "readwrite").objectStore(s).add(v));
-const dbDel = (s, k) => pr(db.transaction(s, "readwrite").objectStore(s).delete(k));
-const dbClear = s => pr(db.transaction(s, "readwrite").objectStore(s).clear());
-
 /* ---------- estado em memória ---------- */
 let EXS = [], FICHAS = [], SESSOES = [];
 
 async function loadAll(){
   const [a, b, c] = await Promise.all([dbAll("exercicios"), dbAll("fichas"), dbAll("sessoes")]);
+  // Uma falha de gravação não pode substituir o rascunho em memória por dados antigos.
+  if (sessaoNaoSalva){
+    const i = c.findIndex(s => s.id === sessaoNaoSalva.id);
+    if (i >= 0) c[i] = sessaoNaoSalva; else c.push(sessaoNaoSalva);
+  }
   EXS = a.sort((x, y) => x.nome.localeCompare(y.nome, "pt-BR"));
   FICHAS = b.sort((x, y) => (x.ordem || 0) - (y.ordem || 0));
   SESSOES = c.sort((x, y) => new Date(y.inicio) - new Date(x.inicio));
@@ -442,17 +467,6 @@ function seriesFeitas(sess){
 }
 const seriesTotal = sess => sess.exercicios.reduce((a, e) => a + e.series.length, 0);
 
-function ultimaExecucao(exId){
-  for (const s of concluidas()){
-    const e = s.exercicios.find(x => x.exId === exId && x.series.some(y => y.feita));
-    if (!e) continue;
-    const feitas = e.series.filter(y => y.feita);
-    /* sessões antigas guardavam o esforço por série; o do exercício tem precedência */
-    const esf = e.esforco || (feitas.length ? feitas[feitas.length - 1].esforco : "") || "";
-    return { data:s.inicio, series:feitas, esforco:esf };
-  }
-  return null;
-}
 function recorde(exId){
   let melhor = null;
   concluidas().forEach(s => {
@@ -465,23 +479,6 @@ function recorde(exId){
     });
   });
   return melhor;
-}
-
-/* Hora de subir: na ultima execucao, todas as series bateram o topo da faixa
-   e a ultima delas nao foi marcada como "falhei". Ver CONTEXT.md. */
-function horaDeSubir(exId, repMax){
-  if (!repMax) return null;
-  const ult = ultimaExecucao(exId);
-  if (!ult || !ult.series.length) return null;
-  if (!ult.series.every(s => num(s.reps) >= repMax)) return null;
-  if (ult.esforco === "falhei") return null;
-  const carga = Math.max.apply(null, ult.series.map(s => num(s.carga)));
-  if (!carga) return null;
-  return {
-    carga: carga + 2.5,
-    texto: "Última vez " + ult.series.length + "×" + repMax +
-           ", dá para tentar " + nKg(carga + 2.5) + " kg"
-  };
 }
 
 /* Volume: series concluidas por grupo muscular na semana, contando so o grupo
@@ -541,9 +538,10 @@ function drawRest(){
   if (left <= 0){ beep(); stopRest(); return; }
   bar.hidden = false;
   document.body.classList.add("descansando");
-  bar.innerHTML = '<span class="t">' + fmtClock(left) + '</span>' +
-    '<span class="l">' + esc(rest.label) + '</span>' +
-    '<button data-a="rest-add">+30s</button><button data-a="rest-skip">Pular</button>';
+  bar.innerHTML = '<span class="t" data-testid="rest-time-remaining">' + fmtClock(left) + '</span>' +
+    '<span class="l" data-testid="rest-exercise-label">' + esc(rest.label) + '</span>' +
+    '<button data-testid="rest-add-time" data-a="rest-add"' + (dadosOcupados ? ' disabled' : '') + '>+30s</button>' +
+    '<button data-testid="rest-skip" data-a="rest-skip"' + (dadosOcupados ? ' disabled' : '') + '>Pular</button>';
 }
 function beep(){
   try{
@@ -567,8 +565,9 @@ function beep(){
 let ultimaTela = "";
 function render(){
   const app = $("app");
+  const viewport = $("contentViewport");
   const tela = state.view + "|" + (state.fichaEdit === null ? "" : state.fichaEdit) + "|" + (sessaoAtiva() ? "s" : "");
-  const y = window.scrollY;
+  const y = viewport.scrollTop;
 
   if (state.view === "hoje")        app.innerHTML = sessaoAtiva() ? viewSessao(sessaoAtiva()) : viewHoje();
   else if (state.view === "planos") app.innerHTML = state.fichaEdit !== null ? viewFichaEdit() : viewPlanos();
@@ -576,13 +575,40 @@ function render(){
   else                              app.innerHTML = viewDados();
 
   renderTabs();
+  marcarTestIds();
+  mostrarSalvamento();
+  atualizarIndicadorFicha();
+  if (dadosOcupados) controlesOcupados(true);
   if (state.view === "hoje" && sessaoAtiva()) startTick(); else stopTick();
-  window.scrollTo(0, tela === ultimaTela ? y : 0);
+  // Sem rolagem do documento, ancoragem automática ou animação entre áreas.
+  viewport.scrollTo({ top:tela === ultimaTela ? y : 0, left:0, behavior:"instant" });
   ultimaTela = tela;
+}
+
+/* Identificadores estáveis para os controles legados e os dados apresentados. */
+function marcarTestIds(){
+  const usados = new Set([...document.querySelectorAll("[data-testid]")].map(e => e.dataset.testid));
+  document.querySelectorAll("button,input,select,textarea,a,[data-a],h2,h3,p,label,.stat b,.stat span,.ex-meta,.nota,.pill,.lbl,.legend,.today,.trunc,.wordmark,.vol .g,.vol .n").forEach(el => {
+    if (el.dataset.testid) return;
+    const chave = el.id || (el.dataset.a ? "action-" + el.dataset.a : el.dataset.f ? "field-" + el.dataset.f + "-" + (el.dataset.i || "0") + "-" + (el.dataset.j || "0") : "info-" + el.tagName.toLowerCase());
+    const base = chave.replace(/[^a-zA-Z0-9-]/g, "-").toLowerCase();
+    let nome = base, n = 2;
+    while (usados.has(nome)) nome = base + "-" + n++;
+    el.dataset.testid = nome; usados.add(nome);
+  });
 }
 
 function renderTabs(){
   const tabs = [["hoje","Hoje"],["planos","Planos"],["prog","Progresso"],["dados","Dados"]];
+  const nav = $("tabbar");
+  if (nav.children.length){
+    nav.querySelectorAll("button").forEach(button => {
+      const selecionada = button.dataset.a === "tab:" + state.view;
+      button.classList.toggle("active", selecionada);
+      if (selecionada) button.setAttribute("aria-current", "page"); else button.removeAttribute("aria-current");
+    });
+    return;
+  }
   $("tabbar").innerHTML = tabs.map(([k, l]) =>
     '<button data-a="tab:' + k + '" class="' + (state.view === k ? "active" : "") + '">' +
     ICONS[k === "planos" ? "planos" : k] + '<span>' + l + '</span></button>').join("");
@@ -646,7 +672,7 @@ function viewHoje(){
 /* ---------- SESSÃO ---------- */
 function alvoTexto(e){
   const fx = textoFaixa(e.repMin, e.repMax);
-  return e.series.length + "×" + (fx || "?");
+  return (e.prescrito ? e.prescrito.series : e.series.length) + "×" + (fx || "?");
 }
 
 /* Digitar rep a rep no teclado do celular, suado, é o principal atrito da tela.
@@ -655,7 +681,7 @@ function campoPasso(i, j, campo, valor, unidade){
   return '<div class="np">' +
     '<button class="stp" data-a="dec:' + i + ':' + j + ':' + campo + '" aria-label="Diminuir">−</button>' +
     '<input type="number" inputmode="' + (campo === "carga" ? "decimal" : "numeric") + '"' +
-    (campo === "carga" ? ' step="0.5"' : "") +
+    (campo === "carga" ? ' step="0.01"' : "") +
     ' placeholder="' + unidade + '" value="' + esc(valor) + '"' +
     ' data-f="' + campo + '" data-i="' + i + '" data-j="' + j + '">' +
     '<span class="un">' + unidade + '</span>' +
@@ -681,14 +707,16 @@ function viewSessao(s){
   let h = '<div class="hero"><div class="row"><div class="grow">' +
     '<div class="ex-meta" style="margin-bottom:2px">EM ANDAMENTO</div>' +
     '<h3 class="trunc">' + esc(s.nome) + '</h3></div>' +
-    '<div class="timer" id="sessTimer">' + fmtClock(Date.now() - new Date(s.inicio).getTime()) + '</div></div>' +
+    '<div class="timer" id="sessTimer" data-testid="session-duration">' + fmtClock(Date.now() - new Date(s.inicio).getTime()) + '</div></div>' +
     '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
-    '<div class="ex-meta" style="margin-top:8px">' + feitas + ' de ' + total + ' séries</div></div>';
+    '<div class="ex-meta" style="margin-top:8px">' + feitas + ' de ' + total + ' séries</div>' +
+    '<div id="saveStatus" class="save-state" role="status" aria-live="polite" data-testid="session-save-status"></div>' +
+    '<button id="saveRetry" class="btn btn-sm btn-ghost mt" data-a="sess-retry" data-testid="session-save-retry" hidden>Tentar salvar novamente</button></div>';
 
   h += s.exercicios.map((e, i) => {
     const done = e.series.length > 0 && e.series.every(x => x.feita);
-    const ult = ultimaExecucao(e.exId);
-    const subir = horaDeSubir(e.exId, e.repMax);
+    const ult = ultimaExecucaoContexto(e.exId, s.fichaId, e.itemId);
+    const subir = horaDeSubir(e, s.fichaId);
     const dica = "Alvo " + alvoTexto(e) + (ult
       ? " · última: " + ult.series.map(x => nKg(num(x.carga)) + "kg×" + x.reps).join(", ")
       : " · primeira vez");
@@ -700,7 +728,7 @@ function viewSessao(s){
       '<div class="grow"><div class="trunc" style="font-weight:650">' + esc(e.nome) + '</div>' +
       '<div class="ex-meta">' + esc(dica) + '</div>' +
       (e.nota ? '<div class="nota">' + esc(e.nota) + '</div>' : "") +
-      (subir ? '<div class="pill brand" style="margin-top:6px">' + ICONS.arrowUp + ' ' +
+      (subir ? '<div class="pill brand" data-testid="progression-suggestion-' + i + '" style="margin-top:6px">' + ICONS.arrowUp + ' ' +
                esc(subir.texto) + '</div>' : "") +
       '</div>' +
       (e.descanso ? '<span class="pill">' + e.descanso + 's</span>' : "") + '</div>' +
@@ -763,10 +791,10 @@ function viewPlanos(){
 function viewFichaEdit(){
   const d = state.draft;
   let h = '<div class="row" style="margin-bottom:14px">' +
-    '<button class="icon-btn" data-a="ficha-back">' + ICONS.back + '</button>' +
+    '<button class="icon-btn" data-a="ficha-back" aria-label="Voltar às fichas">' + ICONS.back + '</button>' +
     '<div class="grow"><h3>' + (state.fichaEdit === "new" ? "Nova ficha" : "Editar ficha") + '</h3></div>' +
-    (state.fichaEdit !== "new" ? '<button class="icon-btn" data-a="ficha-del" style="color:var(--brand)">' + ICONS.trash + '</button>' : "") +
-    '</div>';
+    (state.fichaEdit !== "new" ? '<button class="icon-btn" data-a="ficha-del" aria-label="Excluir ficha" style="color:var(--brand)">' + ICONS.trash + '</button>' : "") +
+    '</div><p id="draftStatus" class="draft-status" role="status" data-testid="plan-draft-status"></p>';
 
   h += '<div class="card stack">' +
     '<div><label for="fNome">Nome da ficha</label>' +
@@ -781,31 +809,12 @@ function viewFichaEdit(){
   if (!d.itens.length){
     h += '<div class="empty"><p>Adicione os exercícios desta ficha.</p></div>';
   } else {
-    h += '<div class="card">' + d.itens.map((it, i) => {
-      const ex = exById(it.exId);
-      return '<div class="item"><div class="handle">' +
-        '<button data-a="item-up:' + i + '"' + (i === 0 ? ' style="opacity:.25"' : "") + '>' + ICONS.up + '</button>' +
-        '<button data-a="item-down:' + i + '"' + (i === d.itens.length - 1 ? ' style="opacity:.25"' : "") + '>' + ICONS.down + '</button>' +
-        '</div><div class="grow">' +
-        '<div class="trunc" style="font-weight:600">' + esc(ex ? ex.nome : "(removido)") + '</div>' +
-        '<div class="mini-grid">' +
-        '<div><label>Séries</label><input type="number" inputmode="numeric" min="1" value="' + it.series + '" data-f="it-series" data-i="' + i + '"></div>' +
-        '<div><label>Reps</label><div class="faixa">' +
-        '<input type="number" inputmode="numeric" placeholder="mín" value="' + (it.repMin == null ? "" : it.repMin) + '" data-f="it-repmin" data-i="' + i + '">' +
-        '<span>–</span>' +
-        '<input type="number" inputmode="numeric" placeholder="máx" value="' + (it.repMax == null ? "" : it.repMax) + '" data-f="it-repmax" data-i="' + i + '">' +
-        '</div></div>' +
-        '<div><label>Carga</label><input type="number" inputmode="decimal" step="0.5" placeholder="kg" value="' + esc(it.carga) + '" data-f="it-carga" data-i="' + i + '"></div>' +
-        '<div><label>Desc. s</label><input type="number" inputmode="numeric" value="' + it.descanso + '" data-f="it-desc" data-i="' + i + '"></div>' +
-        '</div>' +
-        '<input type="text" style="margin-top:8px;font-size:14px;padding:9px 11px" placeholder="Nota (ex: pegada aberta)" value="' + esc(it.nota || "") + '" data-f="it-nota" data-i="' + i + '">' +
-        '</div>' +
-        '<button class="icon-btn" data-a="item-del:' + i + '">' + ICONS.trash + '</button></div>';
-    }).join("") + '</div>';
+    h += d.itens.map((it, i) => itemDaFicha(it, i, d.itens.length)).join("");
   }
 
   h += '<button class="btn btn-ghost" data-a="item-add">' + ICONS.plus + ' Adicionar exercício</button>' +
-       '<button class="btn btn-primary mt" data-a="ficha-save">Salvar ficha</button>';
+       '<button class="btn btn-primary mt" data-a="ficha-save">Salvar ficha</button>' +
+       (state.fichaEdit !== "new" ? '<button class="btn btn-ghost mt" data-a="ficha-duplicate:' + state.fichaEdit + '" data-testid="plan-duplicate-button">Duplicar ficha</button>' : "");
   return h;
 }
 
@@ -836,28 +845,7 @@ function viewProgresso(){
       '</select>' + chartCarga(state.progEx) + '</div>';
   }
 
-  h += '<div class="section-label">Histórico (' + feitas.length + ')</div>';
-  h += feitas.slice(0, 40).map(s => {
-    const aberto = state.sessOpen === s.id;
-    let c = '<div class="card"><button class="row" style="width:100%;text-align:left" data-a="sess-open:' + s.id + '">' +
-      '<div class="grow"><h3 class="trunc">' + esc(s.nome) + '</h3>' +
-      '<div class="ex-meta">' + esc(fmtData(s.inicio)) + ' · ' + esc(DIAS[new Date(s.inicio).getDay()]) + ' · ' +
-      fmtClock(new Date(s.fim) - new Date(s.inicio)) + '</div></div>' +
-      '<span class="pill ok">' + seriesFeitas(s) + ' séries</span></button>';
-    if (aberto){
-      c += '<div style="margin-top:12px;border-top:1px solid var(--border-soft);padding-top:10px">' +
-        (s.observacao ? '<div class="nota" style="margin-bottom:8px">' + esc(s.observacao) + '</div>' : "") +
-        s.exercicios.map(e => {
-          const f = e.series.filter(x => x.feita);
-          if (!f.length) return "";
-          return '<div style="padding:6px 0"><div style="font-weight:600;font-size:.92rem">' + esc(e.nome) + '</div>' +
-            '<div class="ex-meta">' + f.map(x => nKg(num(x.carga)) + "kg × " + esc(x.reps) +
-              (x.esforco ? " (" + esc(x.esforco) + ")" : "")).join("  ·  ") + '</div></div>';
-        }).join("") +
-        '<button class="btn btn-danger mt" data-a="sess-del:' + s.id + '">Excluir este treino</button></div>';
-    }
-    return c + '</div>';
-  }).join("");
+  h += viewHistorico();
 
   return h;
 }
@@ -970,13 +958,16 @@ function viewDados(){
 function openModal(titulo, corpo, acao, extra){
   $("modalH").innerHTML =
     '<div class="hrow"><button class="icon-btn" data-a="modal-close" aria-label="Fechar">' + ICONS.close + '</button>' +
-    '<h3 class="trunc">' + titulo + '</h3>' + (acao || "") + '</div>' +
+    '<h3 id="modalTitle" class="trunc" data-testid="modal-title">' + esc(titulo) + '</h3>' + (acao || "") + '</div>' +
     (extra ? '<div class="extra">' + extra + '</div>' : "");
   $("modalB").innerHTML = corpo;
   $("modal").classList.add("on");
+  marcarTestIds();
+  if (dadosOcupados) controlesOcupados(true);
   ajustarSheet();
 }
 function closeModal(){
+  if (saidaFichaPendente){ concluirSaidaFicha(false); return; }
   $("modal").classList.remove("on");
   $("modalB").innerHTML = "";
   const sheet = document.querySelector("#modal .sheet");
@@ -1076,6 +1067,13 @@ async function iniciarSessao(fichaId){
   if (sessaoAtiva()){ toast("Já existe um treino em andamento"); return; }
   const f = FICHAS.find(x => x.id === fichaId);
   if (!f) return;
+  if (!f.itens.length){ toast("Adicione exercícios à ficha antes de iniciar"); return; }
+  const erro = erroNaFicha(f);
+  if (erro){ toast(erro); return false; }
+  if (f.itens.some(it => !it.itemId)){
+    f.itens.forEach(it => { if (!it.itemId) it.itemId = novoItemId(); });
+    await dbPut("fichas", f);
+  }
 
   const sess = {
     fichaId: f.id,
@@ -1086,9 +1084,12 @@ async function iniciarSessao(fichaId){
     observacao: "",
     exercicios: f.itens.map(it => {
       const ex = exById(it.exId);
-      const ult = ultimaExecucao(it.exId);
+      const ult = ultimaExecucaoContexto(it.exId, f.id, it.itemId);
       return {
         exId: it.exId,
+        itemId: it.itemId,
+        prescrito: prescricaoDoItem(it),
+        incremento: incrementoDoItem(it),
         nome: ex ? ex.nome : "(removido)",
         grupo: ex ? ex.grupo : null,
         descanso: it.descanso || 0,
@@ -1114,27 +1115,21 @@ async function iniciarSessao(fichaId){
   render();
 }
 
-let saveTimer = null;
-function salvarSessao(sess, redraw){
-  clearTimeout(saveTimer);
-  saveTimer = setTimeout(() => { dbPut("sessoes", sess); }, 350);
-  if (redraw) render();
-}
-
 async function finalizarSessao(){
-  const s = sessaoAtiva();
-  if (!s) return;
+  await garantirSessaoSalva();
+  const ativa = sessaoAtiva();
+  if (!ativa) return;
+  // Só substitui a sessão em memória depois que a conclusão estiver gravada.
+  const s = JSON.parse(JSON.stringify(ativa));
 
   /* recordes anteriores, para avisar se algum caiu hoje */
   const antes = {};
   s.exercicios.forEach(e => { const r = recorde(e.exId); antes[e.exId] = r ? r.carga : 0; });
 
-  clearTimeout(saveTimer);
   const obs = $("obs");
   s.observacao = obs ? obs.value.trim() : (s.observacao || "");
   s.status = "concluida";
   s.fim = new Date().toISOString();
-  s.exercicios.forEach(e => { e.series = e.series.filter(x => x.feita || num(x.carga) || String(x.reps).trim()); });
 
   const novos = [];
   s.exercicios.forEach(e => {
@@ -1145,6 +1140,7 @@ async function finalizarSessao(){
   });
 
   await dbPut("sessoes", s);
+  limparEstadoSalvamento();
   stopRest();
   closeModal();
   await loadAll();
@@ -1157,8 +1153,9 @@ async function descartarSessao(){
   const s = sessaoAtiva();
   if (!s) return;
   if (!confirm("Descartar esta sessão? Nada será salvo.")) return;
-  clearTimeout(saveTimer);
+  await Promise.all([...gravacoesPendentes]);
   await dbDel("sessoes", s.id);
+  limparEstadoSalvamento();
   stopRest();
   await loadAll();
   render();
@@ -1166,31 +1163,38 @@ async function descartarSessao(){
 
 const novoDraft = () => ({ nome:"", diaSemana:null, itens:[], ordem:FICHAS.length });
 
+function erroNaFicha(d){
+  if (!d.nome.trim()) return "Dê um nome à ficha";
+  for (const it of d.itens){
+    if (!Number.isSafeInteger(it.series) || it.series < 1 || it.series > 1000) return "Informe uma quantidade válida de séries";
+    if (it.repMin != null && it.repMax != null && it.repMin > it.repMax) return "O mínimo de repetições não pode superar o máximo";
+    const carga = Number(String(it.carga == null ? "" : it.carga).replace(",", "."));
+    if (!Number.isFinite(carga) || carga < 0) return "Informe uma carga válida, maior ou igual a zero";
+    const incremento = incrementoDoItem(it);
+    if (incremento < 0.01 || Math.abs(incremento * 100 - Math.round(incremento * 100)) > 0.000001) return "Informe um passo de carga positivo, com até 2 casas decimais";
+  }
+  return "";
+}
+
 async function salvarFicha(){
   const d = state.draft;
-  if (!d.nome.trim()){ toast("Dê um nome à ficha"); return; }
+  const erro = erroNaFicha(d);
+  if (erro){ toast(erro); return false; }
+  d.itens.forEach(it => { if (!it.itemId) it.itemId = novoItemId(); it.incremento = incrementoDoItem(it); });
   const reg = { nome:d.nome.trim(), diaSemana:d.diaSemana, itens:d.itens, ordem:d.ordem };
   if (state.fichaEdit === "new") await dbAdd("fichas", reg);
   else await dbPut("fichas", Object.assign({ id:state.fichaEdit }, reg));
   await loadAll();
-  state.fichaEdit = null; state.draft = null;
+  limparEdicaoFicha();
   render();
   toast("Ficha salva");
+  return true;
 }
 
 /* ---------- backup ---------- */
 async function exportar(){
-  const dados = {
-    app: "8health",
-    versao: 2,
-    exportadoEm: new Date().toISOString(),
-    perfil: {},
-    exercicios: EXS,
-    fichas: FICHAS,
-    sessoes: SESSOES,
-    medidas: [],
-    dieta: {}
-  };
+  await garantirSessaoSalva();
+  const dados = await lerBackup();
   const nome = "8health-backup-" + new Date().toISOString().slice(0, 10) + ".json";
   const blob = new Blob([JSON.stringify(dados, null, 2)], { type:"application/json" });
 
@@ -1239,33 +1243,39 @@ function migrarBackup(dados){
 async function importar(file){
   let dados;
   try{ dados = JSON.parse(await file.text()); }
-  catch(_){ toast("Arquivo inválido"); return; }
-
-  if (!dados || !Array.isArray(dados.exercicios) || !Array.isArray(dados.fichas)){
-    toast("Backup não reconhecido"); return;
+  catch(_){ toast("Arquivo inválido. Seus dados foram mantidos."); return false; }
+  try { dados = validarBackup(dados); }
+  catch(err){
+    const detalhe = err instanceof TypeError ? "Estrutura de backup inválida." : err.message;
+    toast(detalhe + " Seus dados foram mantidos."); return false;
   }
-  if (!confirm("Restaurar o backup? Os dados atuais deste aparelho serão substituídos.")) return;
-
-  dados = migrarBackup(dados);
-
-  for (const s of STORES) await dbClear(s);
-  for (const e of dados.exercicios) await dbAdd("exercicios", e);
-  for (const f of dados.fichas) await dbAdd("fichas", f);
-  for (const s of (dados.sessoes || [])) await dbAdd("sessoes", s);
-  for (const m of (dados.medidas || [])) await dbAdd("medidas", m);
-
+  if (!confirm("Restaurar " + dados.fichas.length + " fichas e " + dados.sessoes.length +
+      " sessões? Os dados atuais deste aparelho serão substituídos. Exporte um backup antes se quiser guardá-los.")) return false;
+  await garantirSessaoSalva();
+  try { await gravarBackupAtomico(dados); }
+  catch(err){
+    console.error("Restauração cancelada", err);
+    toast("Não foi possível restaurar. Seus dados anteriores foram mantidos."); return false;
+  }
+  limparEstadoSalvamento();
+  stopRest(); closeModal();
   await loadAll();
-  state.view = "hoje";
+  Object.assign(state, { view:"hoje", fichaEdit:null, draft:null, progEx:null, sessOpen:null, semana:0 });
+  limparEdicaoFicha(); resetHistorico();
   render();
   toast("Backup restaurado");
+  return true;
 }
 
 async function apagarTudo(){
   if (!confirm("Apagar TODOS os dados deste aparelho? Isso não pode ser desfeito.")) return;
   if (!confirm("Tem certeza absoluta? Exporte um backup antes se quiser guardar.")) return;
-  for (const s of STORES) await dbClear(s);
+  await Promise.all([...gravacoesPendentes]);
+  await gravarBackupAtomico(Object.fromEntries(STORES.map(s => [s, []])));
+  limparEstadoSalvamento(); stopRest(); closeModal();
   await seedExercicios();
   await loadAll();
+  limparEdicaoFicha(); resetHistorico();
   state.view = "hoje";
   render();
   toast("Dados apagados");
@@ -1277,16 +1287,28 @@ async function apagarTudo(){
 document.addEventListener("click", async ev => {
   const el = ev.target.closest("[data-a]");
   if (!el) return;
+  if (dadosOcupados) return;
   const [act, a1, a2, a3] = el.dataset.a.split(":");
 
-  if (act === "tab"){ state.view = a1; state.fichaEdit = null; state.draft = null; render(); return; }
+  if (act === "draft-keep"){ concluirSaidaFicha(false); return; }
+  if (act === "draft-discard"){ concluirSaidaFicha(true); return; }
+  if (act === "draft-save-exit"){
+    const ok = await executarExclusivo(salvarFicha);
+    concluirSaidaFicha(!!ok); return;
+  }
+  if (act === "tab" && a1 === state.view) return;
+  if (["tab", "ficha-new", "ficha-edit", "ficha-back", "ficha-duplicate", "app-update", "wipe"].includes(act)){
+    if (!await confirmarSaidaFicha()) return;
+  }
+  if (act === "tab"){ state.view = a1; limparEdicaoFicha(); closeModal(); render(); return; }
   if (act === "modal-close"){ closeModal(); return; }
 
   /* sessão */
-  if (act === "start"){ await iniciarSessao(+a1); return; }
+  if (act === "start"){ await executarExclusivo(() => iniciarSessao(+a1)); return; }
   if (act === "sess-finish"){ modalFinalizar(); return; }
-  if (act === "sess-finish-ok"){ await finalizarSessao(); return; }
-  if (act === "sess-cancel"){ await descartarSessao(); return; }
+  if (act === "sess-finish-ok"){ await executarExclusivo(finalizarSessao); return; }
+  if (act === "sess-cancel"){ await executarExclusivo(descartarSessao); return; }
+  if (act === "sess-retry"){ await executarExclusivo(garantirSessaoSalva); return; }
 
   if (act === "serie"){
     const s = sessaoAtiva(); if (!s) return;
@@ -1307,10 +1329,10 @@ document.addEventListener("click", async ev => {
     const s = sessaoAtiva(); if (!s) return;
     const i = +a1, j = +a2, campo = a3;
     const exc = s.exercicios[i];
-    const passo = campo === "carga" ? 2.5 : 1;
+    const passo = campo === "carga" ? incrementoDoItem(exc) : 1;
     let novo = num(exc.series[j][campo]) + (act === "inc" ? passo : -passo);
     if (novo < 0) novo = 0;
-    const txt = campo === "carga" ? String(Math.round(novo * 10) / 10) : String(Math.round(novo));
+    const txt = campo === "carga" ? String(Math.round(novo * 100) / 100) : String(Math.round(novo));
     exc.series[j][campo] = txt;
     const el2 = document.querySelector('input[data-f="' + campo + '"][data-i="' + i + '"][data-j="' + j + '"]');
     if (el2) el2.value = txt;
@@ -1338,27 +1360,21 @@ document.addEventListener("click", async ev => {
 
   /* fichas */
   if (act === "ficha-new"){
-    state.view = "planos"; state.fichaEdit = "new"; state.draft = novoDraft(); render(); return;
+    abrirEditorFicha(novoDraft(), "new"); return;
   }
   if (act === "ficha-edit"){
-    const f = FICHAS.find(x => x.id === +a1); if (!f) return;
-    state.fichaEdit = f.id;
-    state.draft = {
-      nome: f.nome,
-      diaSemana: f.diaSemana === undefined ? null : f.diaSemana,
-      itens: f.itens.map(i => Object.assign({}, i)),
-      ordem: f.ordem || 0
-    };
-    render(); return;
+    editarFicha(+a1); return;
   }
-  if (act === "ficha-back"){ state.fichaEdit = null; state.draft = null; render(); return; }
-  if (act === "ficha-save"){ await salvarFicha(); return; }
+  if (act === "ficha-duplicate"){ duplicarFicha(+a1); return; }
+  if (act === "ficha-back"){ limparEdicaoFicha(); render(); return; }
+  if (act === "ficha-save"){ await executarExclusivo(salvarFicha); return; }
   if (act === "ficha-del"){
-    if (!confirm("Excluir esta ficha? O histórico de treinos é mantido.")) return;
-    await dbDel("fichas", state.fichaEdit);
-    await loadAll();
-    state.fichaEdit = null; state.draft = null;
-    render(); toast("Ficha excluída"); return;
+    if (!confirm(fichaAlterada() ? "Excluir esta ficha e descartar as alterações não salvas? O histórico de treinos é mantido." : "Excluir esta ficha? O histórico de treinos é mantido.")) return;
+    await executarExclusivo(async () => {
+      await dbDel("fichas", state.fichaEdit);
+      await loadAll(); limparEdicaoFicha();
+      render(); toast("Ficha excluída");
+    }); return;
   }
 
   if (act === "item-add"){ modalPicker(""); return; }
@@ -1387,7 +1403,7 @@ document.addEventListener("click", async ev => {
     return;
   }
   if (act === "ex-pick"){
-    state.draft.itens.push({ exId:+a1, series:3, repMin:8, repMax:12, carga:"", descanso:60, nota:"" });
+    state.draft.itens.push({ exId:+a1, itemId:novoItemId(), incremento:2.5, series:3, repMin:8, repMax:12, carga:"", descanso:60, nota:"" });
     closeModal(); render(); return;
   }
   if (act === "ex-edit"){ modalEditarEx(+a1); return; }
@@ -1407,6 +1423,13 @@ document.addEventListener("click", async ev => {
   }
 
   /* progresso */
+  if (act === "hist-clear"){ resetHistorico(); render(); return; }
+  if (act === "hist-more"){
+    const primeiroNovo = sessoesFiltradas()[hist.limite];
+    hist.limite += HISTORICO_LOTE; render();
+    if (primeiroNovo) document.querySelector('[data-testid="history-session-toggle-' + primeiroNovo.id + '"]').focus({ preventScroll:true });
+    return;
+  }
   if (act === "wk"){
     const novo = state.semana + (+a1);
     if (novo <= 0) { state.semana = novo; render(); }
@@ -1415,22 +1438,25 @@ document.addEventListener("click", async ev => {
   if (act === "sess-open"){ state.sessOpen = state.sessOpen === +a1 ? null : +a1; render(); return; }
   if (act === "sess-del"){
     if (!confirm("Excluir este treino do histórico?")) return;
-    await dbDel("sessoes", +a1);
-    state.sessOpen = null;
-    await loadAll(); render(); toast("Treino excluído"); return;
+    await executarExclusivo(async () => {
+      await dbDel("sessoes", +a1);
+      state.sessOpen = null;
+      await loadAll(); render(); toast("Treino excluído");
+    }); return;
   }
 
   /* dados */
-  if (act === "export"){ await exportar(); return; }
+  if (act === "export"){ await executarExclusivo(exportar); return; }
   if (act === "import"){ $("fileIn").click(); return; }
-  if (act === "wipe"){ await apagarTudo(); return; }
+  if (act === "wipe"){ await executarExclusivo(apagarTudo); return; }
 
   /* app */
-  if (act === "app-update"){ aplicarAtualizacao(); return; }
+  if (act === "app-update"){ await executarExclusivo(aplicarAtualizacao); return; }
   if (act === "app-check"){ await procurarAtualizacao(); return; }
 });
 
 document.addEventListener("input", ev => {
+  if (dadosOcupados) return;
   const el = ev.target.closest("[data-f]");
   if (!el) return;
   const f = el.dataset.f, i = +el.dataset.i, j = +el.dataset.j;
@@ -1448,14 +1474,17 @@ document.addEventListener("input", ev => {
   if (f === "it-repmin"){ state.draft.itens[i].repMin = el.value === "" ? null : Math.max(1, parseInt(el.value, 10) || 1); return; }
   if (f === "it-repmax"){ state.draft.itens[i].repMax = el.value === "" ? null : Math.max(1, parseInt(el.value, 10) || 1); return; }
   if (f === "it-carga"){ state.draft.itens[i].carga = el.value; return; }
+  if (f === "it-incremento"){ state.draft.itens[i].incremento = el.value; return; }
   if (f === "it-desc"){ state.draft.itens[i].descanso = Math.max(0, parseInt(el.value, 10) || 0); return; }
   if (f === "it-nota"){ state.draft.itens[i].nota = el.value; return; }
-  if (f === "ex-search"){ $("modalB").innerHTML = listaPicker(el.value); return; }
+  if (f === "ex-search"){ $("modalB").innerHTML = listaPicker(el.value); marcarTestIds(); return; }
 });
 
 document.addEventListener("change", ev => {
+  if (dadosOcupados) return;
   const el = ev.target.closest("[data-f]");
   if (!el) return;
+  if (el.dataset.f.startsWith("hist-")){ mudarFiltroHistorico(el); return; }
   if (el.dataset.f === "prog-ex"){ state.progEx = +el.value; render(); return; }
   if (el.dataset.f === "ficha-dia"){ state.draft.diaSemana = el.value === "" ? null : +el.value; return; }
 });
@@ -1463,12 +1492,12 @@ document.addEventListener("change", ev => {
 $("fileIn").addEventListener("change", async ev => {
   const file = ev.target.files[0];
   ev.target.value = "";
-  if (file) await importar(file);
+  if (file && await confirmarSaidaFicha()) await executarExclusivo(() => importar(file));
 });
 
 window.addEventListener("beforeunload", ev => {
   if (saindoDeProposito) return;
-  if (sessaoAtiva()){ ev.preventDefault(); ev.returnValue = ""; }
+  if (fichaAlterada() || sessaoAtiva() || sessaoNaoSalva || gravacoesPendentes.size){ ev.preventDefault(); ev.returnValue = ""; }
 });
 
 /* ============================================================
@@ -1485,15 +1514,20 @@ function mostrarAtualizacao(){
   b.hidden = false;
   b.innerHTML = '<span class="grow">Nova versão disponível</span>' +
     '<button data-a="app-update">Atualizar</button>';
+  marcarTestIds();
 }
 
-function aplicarAtualizacao(){
+async function aplicarAtualizacao(){
+  await garantirSessaoSalva();
   saindoDeProposito = true;
   if (swReg && swReg.waiting){
     atualizacaoPedida = true;
     swReg.waiting.postMessage({ type:"SKIP_WAITING" });
     /* se o controllerchange não vier, recarrega assim mesmo */
-    setTimeout(() => { if (!recarregando){ recarregando = true; location.reload(); } }, 1500);
+    await new Promise(resolve => setTimeout(() => {
+      if (!recarregando){ recarregando = true; location.reload(); }
+      resolve();
+    }, 1500));
   } else {
     recarregando = true;
     location.reload();
@@ -1549,6 +1583,13 @@ async function seedExercicios(){
 }
 
 (async function boot(){
+  observarEdicaoFicha();
+  if ("ResizeObserver" in window){
+    new ResizeObserver(() => {
+      const altura = $("restbar").getBoundingClientRect().height;
+      document.documentElement.style.setProperty("--rest-height", Math.ceil(altura) + "px");
+    }).observe($("restbar"));
+  }
   const d = new Date();
   $("todayLabel").textContent = pad2(d.getDate()) + "/" + pad2(d.getMonth() + 1);
 

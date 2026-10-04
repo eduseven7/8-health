@@ -1,0 +1,99 @@
+{
+  "project_identity": {
+    "app_name": "8 Health",
+    "theme": "Dark Red Performance Minimalist (PWA)",
+    "target_viewport": "Mobile Web App 390px (Desktop Preview Responsive)",
+    "design_archetype": "The Performance Pro - High Density & Tactical Minimalism"
+  },
+  "color_palette": {
+    "brand_primary": "#FC5252",
+    "brand_soft": "rgba(252, 82, 82, 0.13)",
+    "bg_dark": "#0A0C0F",
+    "surface_1": "#13161C",
+    "surface_2": "#1A1E26",
+    "border_solid": "#242A34",
+    "border_soft": "#1E232B",
+    "text_primary": "#F3F5F8",
+    "text_muted": "#8A93A1",
+    "text_faint": "#5C6472",
+    "accent_ok": "#3FB950",
+    "accent_warn": "#D29922",
+    "tabbar_bg": "rgba(13, 16, 21, 0.95)"
+  },
+  "typography": {
+    "font_family": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+    "headings": {
+      "h2": "font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; color: #F3F5F8;",
+      "h3": "font-size: 1.02rem; font-weight: 650; letter-spacing: -0.01em; color: #F3F5F8;"
+    },
+    "labels": "font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8A93A1;",
+    "numeric_fields": "font-variant-numeric: tabular-nums; font-weight: 600;"
+  },
+  "layout_and_bug_fixes": {
+    "repetition_and_field_proportions": {
+      "issue": "In viewFichaEdit, repetition inputs (min/max), load step (passo de carga), and controls were squished inside a tight 4-column row (.mini-grid), causing truncation and broken layout at 390px.",
+      "guideline": "Reorganize the exercise edit card into spacious, structured rows or a balanced 2-row responsive grid.",
+      "grid_structure": {
+        "row_1": "Séries (1fr) | Faixa de Repetições Mín–Máx (2fr) | Carga kg (1.2fr)",
+        "row_2": "Descanso segundos (1.5fr) | Passo de Carga kg (1.5fr)",
+        "row_3": "Nota textual (Full width)"
+      },
+      "repetition_range_field": {
+        "container_style": "display: flex; align-items: center; gap: 4px; min-width: 0;",
+        "input_style": "flex: 1; min-width: 48px; text-align: center; padding: 10px 6px; font-size: 14px; font-variant-numeric: tabular-nums;",
+        "separator_style": "color: #5C6472; font-size: 0.85rem; flex: none; font-weight: 700;"
+      },
+      "load_step_field": {
+        "container_style": "display: flex; flex-direction: column; gap: 4px; margin-top: 8px;",
+        "label_style": "font-size: 0.68rem; font-weight: 700; color: #8A93A1; letter-spacing: 0.04em;",
+        "input_style": "width: 100%; text-align: center; padding: 9px; font-size: 14px; font-weight: 600;"
+      }
+    },
+    "scroll_and_tabbar_isolation": {
+      "issue": "Navigating to 'Dados' or scrolling long sheets caused side scrollbar overlap over #tabbar and visible scroll jumps/sliding artifacts between tab views.",
+      "guideline": "Isolate the bottom navigation bar (#tabbar) and main scroll container to eliminate scrollbar invasion and transition jitter.",
+      "tabbar_rules": {
+        "position": "position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;",
+        "background": "background: rgba(13, 16, 21, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);",
+        "border": "border-top: 1px solid #1E232B;",
+        "safe_padding": "padding-bottom: env(safe-area-inset-bottom, 0px);"
+      },
+      "scroll_rules": {
+        "body": "overflow-x: hidden; min-height: 100dvh; overscroll-behavior-y: none;",
+        "main_app": "padding: 8px 18px calc(var(--nav-h) + var(--safe-b) + 32px); max-width: 640px; margin: 0 auto; overflow-x: hidden;",
+        "scrollbar_styling": "scrollbar-width: thin; scrollbar-color: #242A34 #0A0C0F; ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #0A0C0F; } ::-webkit-scrollbar-thumb { background: #242A34; border-radius: 99px; }"
+      },
+      "navigation_transition": {
+        "tab_switching": "When changing tabs (state.view), instantly reset scroll position using window.scrollTo({ top: 0, behavior: 'instant' }) without animated slides or unwanted ease scroll jumps."
+      }
+    }
+  },
+  "component_guidelines": {
+    "buttons": {
+      "primary": "background: #FC5252; color: #FFFFFF; font-weight: 650; min-height: 46px; border-radius: 10px;",
+      "ghost": "background: #1A1E26; color: #F3F5F8; border: 1px solid #242A34; min-height: 46px;",
+      "danger": "background: transparent; color: #FC5252; border: 1px solid rgba(252, 82, 82, 0.35);",
+      "touch_target": "minimum 42px x 42px for steppers (+/-) and action triggers."
+    },
+    "stepper_inputs": {
+      "container": "display: flex; align-items: center; background: #0A0C0F; border: 1px solid #242A34; border-radius: 10px; overflow: hidden;",
+      "button": "width: 38px; height: 42px; display: grid; place-items: center; color: #8A93A1; font-size: 1.2rem;",
+      "input": "flex: 1; border: none; background: transparent; text-align: center; font-weight: 650; font-size: 15px;"
+    },
+    "modal_sheet": {
+      "backdrop": "background: rgba(5, 7, 10, 0.75); backdrop-filter: blur(4px);",
+      "sheet": "background: #13161C; border-top: 1px solid #242A34; border-radius: 18px 18px 0 0; max-width: 640px; margin: 0 auto;",
+      "close_button": "Every modal sheet MUST include a visible header close button."
+    }
+  },
+  "testing_attributes": {
+    "data_testid_rule": "All interactive buttons, input fields, selects, tabs, cards, and modal triggers MUST carry unique, role-based kebab-case data-testid attributes (e.g. data-testid='plan-item-repmin-0', data-testid='history-filter-select')."
+  },
+  "instructions_to_main_agent": [
+    "Preserve existing 8 Health dark and red color palette without full rebranding.",
+    "Reorganize viewFichaEdit fields into proportional multi-row grids so rep min/max inputs and load step inputs never squish or overflow.",
+    "Ensure main content container padding prevents tabbar overlap and custom dark scrollbars do not invade navigation space.",
+    "Maintain instant tab switching without sliding or jumping animations when changing state.view.",
+    "Verify all interactive controls have data-testid attributes and minimum 42px touch targets."
+  ]
+}

@@ -1,7 +1,7 @@
 /* 8 Health — service worker
    Estratégia:
-   - navegação e código (HTML/JSON/JS): network-first, com fallback para o cache offline
-   - imagens e demais estáticos: cache-first
+   - arquivos do app: cache da versão instalada, inclusive HTML e scripts
+   - a nova versão é baixada por inteiro na instalação e aguarda confirmação
 
    A versão nova NÃO assume sozinha: ela fica esperando enquanto o app mostra
    "Nova versão disponível". Quem manda ativar é o usuário, tocando em Atualizar
@@ -9,23 +9,32 @@
 
    Suba a constante VERSION a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v7";
+const VERSION = "8health-v14";
+const CACHE_PREFIX = "8health:" + self.registration.scope + ":";
+const CACHE_NAME = CACHE_PREFIX + VERSION;
 const ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
+  "./scripts/storage.js",
+  "./scripts/progress.js",
+  "./scripts/backup.js",
+  "./scripts/plans.js",
+  "./scripts/history.js",
+  "./scripts/plan-fields.js",
+  "./styles/layout.css",
   "./assets/favicon.png",
   "./assets/icon-1080.png"
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(VERSION).then(cache => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
 });
 
 self.addEventListener("activate", event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== VERSION).map(k => caches.delete(k))))
+      .then(keys => Promise.all(keys.filter(k => k.startsWith(CACHE_PREFIX) && k !== CACHE_NAME).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
@@ -40,30 +49,13 @@ self.addEventListener("fetch", event => {
   if (req.method !== "GET") return;
   if (new URL(req.url).origin !== self.location.origin) return;
 
-  const aceita = req.headers.get("accept") || "";
-  const dinamico = req.mode === "navigate" || aceita.includes("text/html") ||
-    /\.(html|json|js|css)$/.test(new URL(req.url).pathname);
-
-  if (dinamico) {
-    // network-first: sempre pega a versão nova quando há rede
-    event.respondWith(
-      fetch(req)
-        .then(res => {
-          const copia = res.clone();
-          caches.open(VERSION).then(c => c.put(req, copia));
-          return res;
-        })
-        .catch(() => caches.match(req).then(hit => hit || caches.match("./index.html")))
-    );
-    return;
-  }
-
-  // cache-first para imagens e afins
-  event.respondWith(
-    caches.match(req).then(hit => hit || fetch(req).then(res => {
-      const copia = res.clone();
-      caches.open(VERSION).then(c => c.put(req, copia));
-      return res;
-    }))
-  );
+  const url = new URL(req.url);
+  const arquivoDoApp = ASSETS.some(asset => new URL(asset, self.registration.scope).pathname === url.pathname);
+  if (!arquivoDoApp) return;
+  // O HTML nunca avança sozinho para uma versão incompatível com seus scripts.
+  event.respondWith(caches.open(CACHE_NAME).then(async cache => {
+    const hit = await cache.match(req, { ignoreSearch:true });
+    if (hit) return hit;
+    return fetch(req);
+  }));
 });

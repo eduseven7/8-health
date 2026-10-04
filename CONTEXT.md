@@ -91,21 +91,25 @@ exemplo). Nesse caso o app não avalia nada.
 
 ### Esforço
 
-O quão difícil uma Série foi, na percepção do usuário: **fácil**, **no limite** ou
-**falhei**. É **realizado** e opcional — uma Série sem Esforço registrado é normal, não
-incompleta.
+O quão difícil um Exercício foi naquela Sessão, na percepção do usuário: **fácil**,
+**no limite** ou **falhei**. É **realizado** e opcional. A interface registra um toque
+por exercício; sessões antigas com Esforço por Série continuam válidas.
 
 Existe porque a decisão de subir a carga depende de algo que os números não capturam: uma
 série de 10 pode ter sobrado ou ter sido a última possível.
 
 ### Hora de subir
 
-A conclusão de que um Exercício da ficha está pronto para mais carga: todas as Séries
-alcançaram o **topo da faixa de repetições**. É uma sugestão, nunca uma alteração — a Ficha
-só muda quando o usuário a edita.
+A sugestão para um Exercício da ficha com base na última Sessão da mesma ficha e do
+mesmo item, cuja prescrição original seja igual (séries, faixa e carga). Exige todas as
+Séries concluídas, pelo menos a quantidade prescrita, topo da faixa atingido em todas
+e a mesma carga positiva, não abaixo da prescrita. Cargas diferentes não são extrapoladas.
+É uma sugestão, nunca uma alteração — a Ficha só muda quando o usuário a edita.
 
-Fica retida quando a última Série foi marcada como **falhei**, porque bater o topo no
-sacrifício não é o mesmo que estar pronto para subir.
+Fica retida quando o Exercício (ou alguma Série de um registro antigo) está marcado
+como **falhei**. O passo de carga é configurável por item da ficha, com padrão de 2,5 kg.
+Histórico sem prescrição original não gera sugestão. A sessão guarda o alvo original
+mesmo ao adicionar ou remover séries; itens repetidos na ficha têm identidades próprias.
 
 ### Recorde
 
