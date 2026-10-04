@@ -69,6 +69,9 @@
 
   function iniciar(){
     const data = document.getElementById("todayLabel");
+    // cursor:pointer faz o Safari do iPhone tratar o span como tocável;
+    // sem isso, o toque não gera click
+    if (data){ data.style.cursor = "pointer"; data.style.padding = "8px 0 8px 12px"; data.style.margin = "-8px 0"; }
     if (data) data.addEventListener("click", () => {
       const agora = Date.now();
       toques = toques.filter(t => agora - t < 2000).concat(agora);

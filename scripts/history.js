@@ -92,6 +92,10 @@ function mudarFiltroHistorico(el){
   hist[campo] = el.value; hist.limite = HISTORICO_LOTE; state.sessOpen = null;
   const foco = el.id;
   render();
+  // No toque, focar um select ou campo de data reabre o seletor do sistema
+  // (no iPhone, o usuário tinha de escolher o período duas vezes). O foco
+  // só volta ao campo recriado quando há teclado e mouse.
+  if (matchMedia("(pointer: coarse)").matches) return;
   const novo = document.getElementById(foco);
   if (novo) novo.focus({ preventScroll:true });
 }
