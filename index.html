@@ -282,7 +282,7 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.5.7";
+const APP_VERSION = "1.5.8";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -1569,9 +1569,15 @@ async function procurarAtualizacao(){
   if (!swReg){ toast("Atualização automática indisponível"); return; }
   try{
     await swReg.update();
-    setTimeout(() => {
-      if ($("updbar").hidden) toast("Você já está na versão mais recente");
-    }, 1200);
+    // update() resolve antes de a versão nova terminar de baixar; enquanto
+    // ela instala, o aviso de "mais recente" seria falso
+    const novo = swReg.installing;
+    if (novo){
+      toast("Baixando atualização…");
+      return;  // o aviso aparece pelo statechange em registrarSW
+    }
+    if (swReg.waiting){ mostrarAtualizacao(); return; }
+    toast("Você já está na versão mais recente (" + APP_VERSION + ")");
   }catch(_){ toast("Sem conexão para verificar"); }
 }
 

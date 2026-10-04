@@ -9,7 +9,7 @@
 
    Suba a constante VERSION a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v19";
+const VERSION = "8health-v20";
 const CACHE_PREFIX = "8health:" + self.registration.scope + ":";
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 const ASSETS = [
@@ -30,7 +30,11 @@ const ASSETS = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+  // cache:"reload" ignora o cache HTTP do navegador. O GitHub Pages manda
+  // max-age=600, e sem isto uma versão publicada menos de 10 minutos depois
+  // da anterior se instalava com o index.html e os scripts antigos.
+  event.waitUntil(caches.open(CACHE_NAME).then(cache =>
+    cache.addAll(ASSETS.map(url => new Request(url, { cache:"reload" })))));
 });
 
 self.addEventListener("activate", event => {
