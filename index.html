@@ -271,7 +271,6 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
 <script src="scripts/plans.js"></script>
 <script src="scripts/history.js"></script>
 <script src="scripts/plan-fields.js"></script>
-<script src="scripts/viewport.js"></script>
 <script src="scripts/diag.js"></script>
 <script>
 "use strict";
@@ -282,7 +281,7 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.5.8";
+const APP_VERSION = "1.5.9";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -567,9 +566,8 @@ function beep(){
 let ultimaTela = "";
 function render(){
   const app = $("app");
-  const viewport = $("contentViewport");
   const tela = state.view + "|" + (state.fichaEdit === null ? "" : state.fichaEdit) + "|" + (sessaoAtiva() ? "s" : "");
-  const y = viewport.scrollTop;
+  const y = window.scrollY;
 
   if (state.view === "hoje")        app.innerHTML = sessaoAtiva() ? viewSessao(sessaoAtiva()) : viewHoje();
   else if (state.view === "planos") app.innerHTML = state.fichaEdit !== null ? viewFichaEdit() : viewPlanos();
@@ -582,8 +580,8 @@ function render(){
   atualizarIndicadorFicha();
   if (dadosOcupados) controlesOcupados(true);
   if (state.view === "hoje" && sessaoAtiva()) startTick(); else stopTick();
-  // Sem rolagem do documento, ancoragem automática ou animação entre áreas.
-  viewport.scrollTo({ top:tela === ultimaTela ? y : 0, left:0, behavior:"instant" });
+  // mesma tela mantém a posição; troca de tela volta ao topo, sem animação
+  window.scrollTo({ top:tela === ultimaTela ? y : 0, left:0, behavior:"instant" });
   ultimaTela = tela;
 }
 

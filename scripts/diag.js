@@ -36,9 +36,8 @@
       ["100% / vh", sonda("height:100%") + " / " + sonda("height:100vh")],
       ["dvh / svh / lvh", sonda("height:100dvh") + " / " + sonda("height:100svh") + " / " + sonda("height:100lvh")],
       ["safe top / bottom", sonda("height:env(safe-area-inset-top,0px)") + " / " + sonda("height:env(safe-area-inset-bottom,0px)")],
-      ["reparos da janela", window.vpReparos ? window.vpReparos.tentativas + " (último " + (window.vpReparos.ultimo || "—") + ")" : "inativo"],
       ["brandbar", caixa("brandbar")],
-      ["conteúdo", caixa("contentViewport")],
+      ["conteúdo", caixa("app")],
       ["tabbar", caixa("tabbar") + " " + pos("tabbar")],
       ["scrollY", Math.round(scrollY)],
       ["UA", navigator.userAgent.replace(/^Mozilla\/5\.0 /, "").slice(0, 90)]
@@ -49,12 +48,8 @@
     if (!painel) return;
     painel.innerHTML = '<b>Diagnóstico — print e envie</b>' +
       medir().map(([k, v]) => '<div><span>' + k + '</span> ' + v + '</div>').join("") +
-      '<button type="button" data-d="fechar">Fechar</button> · <button type="button" data-d="reparar">Reparar janela</button>';
+      '<button type="button" data-d="fechar">Fechar</button>';
     painel.querySelector('[data-d="fechar"]').onclick = () => alternar(false);
-    painel.querySelector('[data-d="reparar"]').onclick = () => {
-      if (window.vpReparar) window.vpReparar();
-      setTimeout(desenhar, 300);
-    };
   }
 
   function alternar(ligar){
