@@ -9,7 +9,7 @@
 
    Suba a constante VERSION a cada deploy para invalidar o cache antigo. */
 
-const VERSION = "8health-v15";
+const VERSION = "8health-v16";
 const CACHE_PREFIX = "8health:" + self.registration.scope + ":";
 const CACHE_NAME = CACHE_PREFIX + VERSION;
 const ASSETS = [
@@ -22,6 +22,7 @@ const ASSETS = [
   "./scripts/plans.js",
   "./scripts/history.js",
   "./scripts/plan-fields.js",
+  "./scripts/diag.js",
   "./styles/layout.css",
   "./assets/favicon.png",
   "./assets/icon-1080.png"
