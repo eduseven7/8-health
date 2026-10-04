@@ -36,7 +36,7 @@
       ["100% / vh", sonda("height:100%") + " / " + sonda("height:100vh")],
       ["dvh / svh / lvh", sonda("height:100dvh") + " / " + sonda("height:100svh") + " / " + sonda("height:100lvh")],
       ["safe top / bottom", sonda("height:env(safe-area-inset-top,0px)") + " / " + sonda("height:env(safe-area-inset-bottom,0px)")],
-      ["vp-falta", sonda("height:var(--vp-falta)")],
+      ["reparos da janela", window.vpReparos ? window.vpReparos.tentativas + " (último " + (window.vpReparos.ultimo || "—") + ")" : "inativo"],
       ["brandbar", caixa("brandbar")],
       ["conteúdo", caixa("contentViewport")],
       ["tabbar", caixa("tabbar") + " " + pos("tabbar")],
@@ -49,8 +49,12 @@
     if (!painel) return;
     painel.innerHTML = '<b>Diagnóstico — print e envie</b>' +
       medir().map(([k, v]) => '<div><span>' + k + '</span> ' + v + '</div>').join("") +
-      '<button type="button">Fechar</button>';
-    painel.querySelector("button").onclick = () => alternar(false);
+      '<button type="button" data-d="fechar">Fechar</button> · <button type="button" data-d="reparar">Reparar janela</button>';
+    painel.querySelector('[data-d="fechar"]').onclick = () => alternar(false);
+    painel.querySelector('[data-d="reparar"]').onclick = () => {
+      if (window.vpReparar) window.vpReparar();
+      setTimeout(desenhar, 300);
+    };
   }
 
   function alternar(ligar){
@@ -58,7 +62,7 @@
       painel = document.createElement("div");
       painel.style.cssText = "position:fixed;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:200;" +
         "background:rgba(0,0,0,.92);color:#9fe870;border:1px solid #3FB950;border-radius:10px;padding:10px 12px;" +
-        "font:11px/1.5 ui-monospace,Menlo,monospace;max-width:520px;margin:0 auto";
+        "font:11px/1.5 ui-monospace,Menlo,monospace;color-scheme:dark;max-width:520px;margin:0 auto";
       document.body.appendChild(painel);
       desenhar();
     } else if (!ligar && painel){
@@ -72,7 +76,7 @@
     const data = document.getElementById("todayLabel");
     // cursor:pointer faz o Safari do iPhone tratar o span como tocável;
     // sem isso, o toque não gera click
-    if (data){ data.style.cursor = "pointer"; data.style.padding = "8px 0 8px 12px"; data.style.margin = "-8px 0"; }
+    if (data){ data.style.cursor = "pointer"; data.style.padding = "8px 0 8px 12px"; data.style.marginTop = data.style.marginBottom = "-8px"; }
     if (data) data.addEventListener("click", () => {
       const agora = Date.now();
       toques = toques.filter(t => agora - t < 2000).concat(agora);
