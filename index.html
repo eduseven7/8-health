@@ -281,7 +281,7 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.5.5";
+const APP_VERSION = "1.5.6";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -980,7 +980,9 @@ function closeModal(){
 function ajustarSheet(){
   const vv = window.visualViewport, sheet = document.querySelector("#modal .sheet");
   if (!vv || !sheet || !$("modal").classList.contains("on")) return;
-  const oculto = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  // medido contra o próprio #modal, que no PWA do iPhone vai além de
+  // innerHeight até o fim da tela (ver --vp-falta em styles/layout.css)
+  const oculto = Math.max(0, Math.round($("modal").getBoundingClientRect().bottom - vv.height - vv.offsetTop));
   sheet.style.bottom = oculto + "px";
   sheet.style.maxHeight = Math.round(vv.height * 0.92) + "px";
 }

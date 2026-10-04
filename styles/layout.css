@@ -1,11 +1,27 @@
 /* O documento e a navegação não rolam: somente a área de conteúdo.
-   A barra de navegação fica no fluxo, como último item da coluna, e não
-   em position:fixed. No PWA instalado no iPhone, html{height:100%} mede
-   menos que a tela, e uma barra fixa em bottom:0 sobe junto, deixando uma
-   faixa vazia embaixo dela. Por isso o html não tem altura própria: o
-   documento tem a altura do body, que ocupa a tela inteira (100dvh). */
+   A barra de navegação fica no fluxo, como último item da coluna do body,
+   e não em position:fixed. */
 html{overflow:hidden;overscroll-behavior:none;scroll-behavior:auto;color-scheme:dark}
 body{height:100vh;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+
+/* PWA instalado no iPhone com a barra de status translúcida: o app é
+   desenhado desde o topo da tela, mas o iOS desconta a barra de status da
+   altura da janela. Medido num iPhone com iOS 18.7: tela 852, innerHeight
+   e 100dvh 793, 100vh 852, safe-area-inset-top 59. Tudo que usa 100dvh,
+   100% ou bottom:0 termina 59px antes do fim da tela e deixa uma faixa
+   vazia embaixo da barra de navegação.
+   Por isso, instalado, o body usa 100vh (a tela inteira) e fica fixo para
+   que a janela não role esses 59px; os elementos fixos ancorados embaixo
+   descontam a diferença em --vp-falta. Onde o iOS não tem esse desvio,
+   100vh e 100dvh coincidem e --vp-falta é 0. */
+:root{--vp-falta:0px}
+@media (display-mode: standalone){
+  :root{--vp-falta:calc(100vh - 100dvh)}
+  body{position:fixed;top:0;left:0;right:0;height:100vh}
+  #restbar{bottom:calc(var(--nav-h) + var(--safe-b) + 12px - var(--vp-falta))}
+  .toast{bottom:calc(var(--nav-h) + var(--safe-b) + 20px - var(--vp-falta))}
+  #modal{bottom:calc(-1 * var(--vp-falta))}
+}
 #brandbar{position:relative;top:auto;flex:none;width:100%;max-width:640px;margin:0 auto}
 #updbar{position:relative;top:auto;flex:none;width:calc(100% - 36px);margin:0 auto 10px}
 #contentViewport{flex:1;min-height:0;min-width:0;overflow-y:auto;overflow-x:hidden;

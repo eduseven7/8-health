@@ -36,6 +36,7 @@
       ["100% / vh", sonda("height:100%") + " / " + sonda("height:100vh")],
       ["dvh / svh / lvh", sonda("height:100dvh") + " / " + sonda("height:100svh") + " / " + sonda("height:100lvh")],
       ["safe top / bottom", sonda("height:env(safe-area-inset-top,0px)") + " / " + sonda("height:env(safe-area-inset-bottom,0px)")],
+      ["vp-falta", sonda("height:var(--vp-falta)")],
       ["brandbar", caixa("brandbar")],
       ["conteúdo", caixa("contentViewport")],
       ["tabbar", caixa("tabbar") + " " + pos("tabbar")],
