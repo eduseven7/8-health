@@ -54,9 +54,9 @@ button:focus-visible{outline:2px solid var(--brand);outline-offset:3px}
 .bm-fig{flex:1;max-width:190px;margin:0;text-align:center}
 .bm-fig svg{width:100%;height:auto;display:block}
 .bm-fig figcaption{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:4px}
-.bm-base *{fill:#1F242D;stroke:#1F242D;stroke-width:5;stroke-linejoin:round}
-.bm-m{cursor:pointer;stroke:var(--surface);stroke-width:1.2;stroke-linejoin:round}
-.bm-m.sel{stroke:var(--text);stroke-width:2.4}
+.bm-base *{fill:#232934}
+.bm-m{cursor:pointer;stroke:#12151A;stroke-width:.8;stroke-linejoin:round}
+.bm-m.sel{stroke:var(--text);stroke-width:1.8}
 .bm-cardio{text-align:center;margin-top:10px}
 .bm-dot{display:inline-block;width:10px;height:10px;border-radius:3px;flex:none;margin-right:3px}
 .bm-det{background:var(--surface-2);border-radius:var(--r-sm);padding:12px;margin-top:12px}
