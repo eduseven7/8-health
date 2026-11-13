@@ -31,6 +31,8 @@ function validarBackup(dados){
     exigir(e.itemId == null || texto(e.itemId), "Identificação do item inválida.");
     exigir(e.incremento == null || (numero(e.incremento) && num(e.incremento) > 0), "Incremento de carga inválido.");
     exigir(optionalText(e.nota), "Nota inválida.");
+    exigir(e.tempoAlvo == null || id(e.tempoAlvo), "Tempo da isometria inválido.");
+    exigir(e.minutos == null || (typeof e.minutos === "number" && e.minutos > 0 && Number.isFinite(e.minutos)), "Duração do cardio inválida.");
   };
 
   exigir(objeto(dados), "Backup não reconhecido.");
@@ -44,7 +46,10 @@ function validarBackup(dados){
   dados.medidas = dados.medidas === undefined ? [] : dados.medidas;
   const exIds = lista(dados.exercicios, "exercícios");
   lista(dados.fichas, "fichas"); lista(dados.sessoes, "sessões"); lista(dados.medidas, "medidas");
-  dados.exercicios.forEach(e => exigir(texto(e.nome) && GRUPOS.includes(e.grupo), "Nome ou grupo de exercício inválido."));
+  dados.exercicios.forEach(e => {
+    exigir(texto(e.nome) && GRUPOS.includes(e.grupo), "Nome ou grupo de exercício inválido.");
+    exigir((e.tipo == null || TIPOS.includes(e.tipo)) && (e.regiao == null || REGIOES.includes(e.regiao)), "Tipo ou região de exercício inválido.");
+  });
   dados.fichas.forEach(f => {
     exigir(texto(f.nome) && Array.isArray(f.itens), "Ficha inválida.");
     exigir(f.diaSemana == null || (Number.isInteger(f.diaSemana) && f.diaSemana >= 0 && f.diaSemana <= 6), "Dia de treino inválido.");
@@ -65,11 +70,13 @@ function validarBackup(dados){
     if (s.status === "ativa") { ativas++; exigir(s.fim == null, "Sessão ativa com data de conclusão."); }
     else exigir(typeof s.fim === "string" && Number.isFinite(Date.parse(s.fim)) && Date.parse(s.fim) >= Date.parse(s.inicio), "Data de conclusão inválida.");
     exigir(Array.isArray(s.exercicios) && optionalText(s.observacao), "Conteúdo da sessão inválido.");
+    exigir(s.execucao == null || ["", "bom", "melhorar"].includes(s.execucao), "Nível de execução inválido.");
     const itens = new Set();
     s.exercicios.forEach(e => {
       // Fichas/exercícios excluídos legitimamente não invalidam o histórico.
       exigir(objeto(e) && id(e.exId) && texto(e.nome) && Array.isArray(e.series), "Exercício da sessão inválido.");
       exigir(e.grupo == null || GRUPOS.includes(e.grupo), "Grupo da sessão inválido.");
+      exigir((e.tipo == null || TIPOS.includes(e.tipo)) && (e.regiao == null || REGIOES.includes(e.regiao)), "Tipo ou região da sessão inválido.");
       faixa(e); itemExtra(e);
       exigir(numero(e.descanso, true) && ESFORCOS.includes(e.esforco || ""), "Descanso ou esforço inválido.");
       exigir(!e.itemId || !itens.has(e.itemId), "Identificações de itens duplicadas na sessão.");
@@ -80,7 +87,7 @@ function validarBackup(dados){
         exigir(typeof e.prescrito.carga === "number" && numero(e.prescrito.carga), "Carga prescrita inválida.");
       }
       e.series.forEach(sr => exigir(objeto(sr) && typeof sr.feita === "boolean" &&
-        numero(sr.carga) && numero(sr.reps, true) && ESFORCOS.includes(sr.esforco || ""), "Série inválida."));
+        numero(sr.carga) && numero(sr.reps, true) && numero(sr.seg, true) && numero(sr.min) && ESFORCOS.includes(sr.esforco || ""), "Série inválida."));
     });
   });
   exigir(ativas <= 1, "O backup contém mais de um treino em andamento.");

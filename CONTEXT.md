@@ -20,6 +20,26 @@ plano — é uma entrada na biblioteca, reutilizável entre fichas.
 
 Não confundir com **Exercício da ficha**, que é o uso de um Exercício dentro de uma Ficha.
 
+### Tipo
+
+Como um Exercício se mede. É do movimento, não da ficha:
+
+- **Carga** — carga × repetições. O padrão.
+- **Isometria** — segundos sustentados, com carga opcional (uma prancha com anilha).
+  Não tem faixa: cada Série vai até onde a pessoa aguenta, medida por um cronômetro
+  que conta para cima.
+- **Cardio** — minutos, em blocos. Não gera Séries para o Volume.
+
+Exercícios cadastrados antes de existir o Tipo o recebem por dedução (grupo Cardio,
+nome "Prancha"); o usuário pode corrigir.
+
+### Região
+
+A parte do corpo que um Exercício pinta no mapa. É mais fina que o grupo muscular só
+onde o grupo é grosso demais para um desenho: **Pernas** se divide em quadríceps,
+posterior, glúteo, adutores e panturrilha. O Volume continua contado por grupo.
+Cardio não tem Região.
+
 ### Ficha
 
 Um plano de treino nomeado, como "Treino A — Peito e Tríceps": uma lista ordenada de
@@ -73,8 +93,40 @@ propósito, em troca de não exigir que cada exercício declare musculatura secu
 A semana vai de **segunda a domingo**, acompanhando a rotina do usuário em vez do
 calendário.
 
+Cardio fica de fora: é medido em minutos na semana, ao lado do Volume e não dentro dele.
+
 Não é tonelagem. Quilos movidos são **Carga total**, e a grossura de um músculo é uma
 **Circunferência** — nenhum dos dois é Volume.
+
+### Estímulo
+
+O quanto uma Região foi trabalhada numa semana, em relação ao que as Fichas prescrevem
+para ela. É o que colore o mapa do corpo:
+
+- **fora das fichas** (cinza) — nenhuma Ficha treina a Região;
+- **relaxado** (verde) — nenhuma Série feita;
+- **bom estímulo** (amarelo) — parte das Séries prescritas, mais forte a partir da metade;
+- **intenso** (vermelho) — todas as Séries prescritas; escurece conforme os exercícios da
+  Região tiveram **Superação**, em parte ou em todos.
+
+O total prescrito soma as Fichas com dia da semana (todas, se nenhuma tiver dia). Para
+semanas passadas ele usa as Fichas de hoje, e por isso é aproximado se elas mudaram.
+
+### Superação
+
+Um Exercício superou a execução anterior quando teve mais carga, ou mais repetições
+(segundos, na Isometria) sem baixar a carga. A comparação é com a Sessão anterior do
+mesmo Exercício da ficha; a primeira execução não é comparável e não conta nem contra
+nem a favor.
+
+### Execução
+
+A avaliação que o usuário faz da própria técnica ao finalizar uma Sessão: **bom** ou
+**melhorar**. É **realizada**, opcional, e vale para a Sessão inteira. Com *melhorar*,
+as Superações daquela Sessão não contam para o Estímulo — carga a mais com técnica ruim
+não é evolução.
+
+Distinta do **Esforço**, que é por exercício e mede dificuldade, não qualidade.
 
 ### Carga total
 
@@ -105,6 +157,10 @@ mesmo item, cuja prescrição original seja igual (séries, faixa e carga). Exig
 Séries concluídas, pelo menos a quantidade prescrita, topo da faixa atingido em todas
 e a mesma carga positiva, não abaixo da prescrita. Cargas diferentes não são extrapoladas.
 É uma sugestão, nunca uma alteração — a Ficha só muda quando o usuário a edita.
+
+Na **Isometria** a sugestão é outra, porque não há faixa: passar do último tempo ou
+subir a carga. Se o Exercício da ficha tiver um tempo para subir a carga, a carga só é
+sugerida depois de sustentá-lo em todas as Séries prescritas. Cardio não gera sugestão.
 
 Fica retida quando o Exercício (ou alguma Série de um registro antigo) está marcado
 como **falhei**. O passo de carga é configurável por item da ficha, com padrão de 2,5 kg.

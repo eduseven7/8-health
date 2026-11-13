@@ -3,8 +3,11 @@ function novoItemId(){
   return Array.from(crypto.getRandomValues(new Uint8Array(16)), n => n.toString(16).padStart(2, "0")).join("");
 }
 function prescricaoDoItem(it){
-  return { series:it.series, repMin:it.repMin == null ? null : it.repMin,
+  const p = { series:it.series, repMin:it.repMin == null ? null : it.repMin,
     repMax:it.repMax == null ? null : it.repMax, carga:num(it.carga) };
+  if (it.tempoAlvo) p.tempoAlvo = it.tempoAlvo;
+  if (it.minutos) p.minutos = it.minutos;
+  return p;
 }
 function incrementoDoItem(it){ return it.incremento == null ? 2.5 : num(it.incremento); }
 
@@ -25,6 +28,9 @@ function ultimaExecucaoContexto(exId, fichaId, itemId){
 /* Conservador por intenção: histórico sem prescrição original continua visível
    e pode preencher campos, mas não serve de evidência para aumentar carga. */
 function horaDeSubir(atual, fichaId){
+  const tipo = tipoNaSessao(atual);
+  if (tipo === "cardio") return null;
+  if (tipo === "isometria") return sugestaoIsometria(atual, fichaId);
   const alvo = atual.prescrito;
   if (!alvo || !alvo.repMax || !alvo.repMin || alvo.repMin > alvo.repMax) return null;
   const ult = ultimaExecucaoContexto(atual.exId, fichaId, atual.itemId);
@@ -43,4 +49,26 @@ function horaDeSubir(atual, fichaId){
   return { carga:sugerida,
     texto:"Última vez " + ult.series.length + "×" + alvo.repMax +
       ", dá para tentar " + nKg(sugerida) + " kg" };
+}
+
+/* Isometria vai até onde a pessoa aguenta, então sempre há o que tentar: mais
+   tempo, ou mais carga. Com um "tempo para subir a carga" na ficha, a carga só
+   é sugerida depois de sustentá-lo em todas as séries prescritas. */
+function sugestaoIsometria(atual, fichaId){
+  const ult = ultimaExecucaoContexto(atual.exId, fichaId, atual.itemId);
+  if (!ult) return null;
+  const feitas = ult.series.filter(s => num(s.seg) > 0);
+  if (!feitas.length) return null;
+  const melhor = Math.max.apply(null, feitas.map(s => num(s.seg)));
+  const carga = num(feitas[0].carga), incremento = incrementoDoItem(atual);
+  const mesmaCarga = feitas.every(s => num(s.carga) === carga);
+  const nova = Math.round((carga + incremento) * 100) / 100;
+  const alvo = atual.prescrito && atual.prescrito.tempoAlvo;
+  const texto = "Última vez " + fmtSeg(melhor);
+  if (!mesmaCarga || incremento <= 0) return { texto:texto + ", tente passar disso" };
+  if (!alvo) return { carga:nova, texto:texto + ", tente passar disso ou usar " + nKg(nova) + " kg" };
+  const completas = ult.exercicio.series.every(s => s.feita) && feitas.length >= atual.prescrito.series;
+  if (completas && feitas.every(s => num(s.seg) >= alvo))
+    return { carga:nova, texto:"Aguentou " + fmtSeg(alvo) + " em todas, dá para tentar " + nKg(nova) + " kg" };
+  return { texto:texto + ", busque " + fmtSeg(alvo) + " em todas antes de subir a carga" };
 }

@@ -15,21 +15,30 @@ function camposRepeticoesPlano(it, i){
     '" data-f="it-repmax" data-i="' + i + '" data-testid="plan-item-repmax-' + i + '"></div></fieldset>';
 }
 function itemDaFicha(it, i, total){
-  const ex = exById(it.exId), nome = ex ? ex.nome : "(removido)";
+  const ex = exById(it.exId), nome = ex ? ex.nome : "(removido)", tipo = tipoDoEx(ex);
   return '<section class="card plan-item" data-testid="plan-item-' + i + '" aria-labelledby="planItemName-' + i + '">' +
     '<div class="plan-item-head"><h3 id="planItemName-' + i + '" class="plan-item-name" data-testid="plan-item-name-' + i + '">' + esc(nome) + '</h3>' +
     '<div class="plan-item-actions">' +
     '<button class="icon-btn" data-a="item-up:' + i + '" data-testid="plan-item-up-' + i + '" aria-label="Mover exercício para cima"' + (i === 0 ? ' disabled' : '') + '>' + ICONS.up + '</button>' +
     '<button class="icon-btn" data-a="item-down:' + i + '" data-testid="plan-item-down-' + i + '" aria-label="Mover exercício para baixo"' + (i === total - 1 ? ' disabled' : '') + '>' + ICONS.down + '</button>' +
     '<button class="icon-btn remove-item" data-a="item-del:' + i + '" data-testid="plan-item-remove-' + i + '" aria-label="Remover exercício da ficha">' + ICONS.trash + '</button>' +
-    '</div></div><div class="plan-primary">' +
+    '</div></div>' + (tipo === "cardio"
+    ? '<div class="plan-secondary" style="margin-top:0">' +
+      campoNumericoPlano(i, "series", "Blocos", it.series, 'inputmode="numeric" min="1" step="1"') +
+      campoNumericoPlano(i, "min", "Duração (min)", it.minutos, 'inputmode="decimal" min="1" step="1" placeholder="livre"') +
+      '</div><p class="plan-help" data-testid="cardio-help-' + i + '">Cardio é registrado em minutos e não conta como série no volume.</p>'
+    : '<div class="plan-primary">' +
     campoNumericoPlano(i, "series", "Séries", it.series, 'inputmode="numeric" min="1" step="1"', "plan-series") +
-    camposRepeticoesPlano(it, i) +
+    (tipo === "isometria"
+      ? campoNumericoPlano(i, "tempo", "Subir carga em (s)", it.tempoAlvo, 'inputmode="numeric" min="1" step="1" placeholder="livre"', "plan-reps")
+      : camposRepeticoesPlano(it, i)) +
     campoNumericoPlano(i, "carga", "Carga (kg)", it.carga, 'inputmode="decimal" min="0" step="0.01" placeholder="kg"', "plan-load") +
     '</div><div class="plan-secondary">' +
     campoNumericoPlano(i, "desc", "Descanso (s)", it.descanso, 'inputmode="numeric" min="0" step="1"') +
     campoNumericoPlano(i, "incremento", "Passo de carga (kg)", incrementoDoItem(it), 'inputmode="decimal" min="0.01" step="0.01" aria-describedby="planHelp-' + i + '"') +
-    '</div><p id="planHelp-' + i + '" class="plan-help" data-testid="increment-help-' + i + '">O passo vale para os botões +/− e a sugestão de progressão.</p>' +
+    '</div><p id="planHelp-' + i + '" class="plan-help" data-testid="increment-help-' + i + '">' + (tipo === "isometria"
+      ? "Cada série vai até você aguentar, com cronômetro. Se informar um tempo, o app só sugere mais carga depois de sustentá-lo em todas as séries; em branco, sugere passar do último tempo ou subir a carga."
+      : "O passo vale para os botões +/− e a sugestão de progressão.") + '</p>') +
     '<div class="plan-note"><label for="planNote-' + i + '" data-testid="plan-item-note-label-' + i + '">Nota (opcional)</label>' +
     '<input id="planNote-' + i + '" type="text" placeholder="Ex.: pegada aberta" value="' + esc(it.nota || "") +
     '" data-f="it-nota" data-i="' + i + '" data-testid="plan-item-note-' + i + '"></div></section>';

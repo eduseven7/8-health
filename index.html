@@ -266,7 +266,10 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
 <input type="file" id="fileIn" data-testid="backup-file-input" accept="application/json,.json" hidden>
 
 <script src="scripts/storage.js"></script>
+<script src="scripts/exercise-types.js"></script>
 <script src="scripts/progress.js"></script>
+<script src="scripts/stimulus.js"></script>
+<script src="scripts/body-map.js"></script>
 <script src="scripts/backup.js"></script>
 <script src="scripts/plans.js"></script>
 <script src="scripts/history.js"></script>
@@ -281,7 +284,7 @@ body.descansando main{padding-bottom:calc(var(--nav-h) + var(--safe-b) + 106px)}
    Vocabulario e regras de dominio: ver CONTEXT.md
    ============================================================ */
 
-const APP_VERSION = "1.5.9";
+const APP_VERSION = "1.6.0";
 
 const GRUPOS = ["Peito","Costas","Ombro","Bíceps","Tríceps","Antebraço","Pernas","Core","Cardio"];
 
@@ -488,23 +491,26 @@ function volumeSemana(offset){
   const ini = inicioSemana(offset), fim = new Date(ini);
   fim.setDate(fim.getDate() + 7);
   const conta = {};
+  let cardioMin = 0;
   concluidas().forEach(s => {
     const d = new Date(s.inicio);
     if (d < ini || d >= fim) return;
     s.exercicios.forEach(e => {
+      const feitas = e.series.filter(x => x.feita);
+      /* cardio se mede em minutos, não em séries */
+      if (tipoNaSessao(e) === "cardio"){ cardioMin += feitas.reduce((a, x) => a + num(x.min), 0); return; }
       const g = e.grupo || (exById(e.exId) || {}).grupo;
       if (!g) return;
-      const n = e.series.filter(x => x.feita).length;
-      if (n) conta[g] = (conta[g] || 0) + n;
+      if (feitas.length) conta[g] = (conta[g] || 0) + feitas.length;
     });
   });
-  return { ini, fim, conta };
+  return { ini, fim, conta, cardioMin };
 }
 
 /* ============================================================
    ESTADO DE NAVEGAÇÃO
    ============================================================ */
-const state = { view:"hoje", fichaEdit:null, draft:null, progEx:null, sessOpen:null, semana:0 };
+const state = { view:"hoje", fichaEdit:null, draft:null, progEx:null, sessOpen:null, semana:0, regiao:null };
 
 let tickIv = null;
 function startTick(){
@@ -671,6 +677,9 @@ function viewHoje(){
 
 /* ---------- SESSÃO ---------- */
 function alvoTexto(e){
+  const tipo = tipoNaSessao(e), n = e.prescrito ? e.prescrito.series : e.series.length;
+  if (tipo === "cardio") return e.prescrito && e.prescrito.minutos ? fmtMin(e.prescrito.minutos) : "livre";
+  if (tipo === "isometria") return n + "× até aguentar";
   const fx = textoFaixa(e.repMin, e.repMax);
   return (e.prescrito ? e.prescrito.series : e.series.length) + "×" + (fx || "?");
 }
@@ -680,13 +689,37 @@ function alvoTexto(e){
 function campoPasso(i, j, campo, valor, unidade){
   return '<div class="np">' +
     '<button class="stp" data-a="dec:' + i + ':' + j + ':' + campo + '" aria-label="Diminuir">−</button>' +
-    '<input type="number" inputmode="' + (campo === "carga" ? "decimal" : "numeric") + '"' +
-    (campo === "carga" ? ' step="0.01"' : "") +
+    '<input type="number" inputmode="' + (campo === "carga" || campo === "min" ? "decimal" : "numeric") + '"' +
+    (campo === "carga" || campo === "min" ? ' step="0.01"' : "") +
     ' placeholder="' + unidade + '" value="' + esc(valor) + '"' +
     ' data-f="' + campo + '" data-i="' + i + '" data-j="' + j + '">' +
     '<span class="un">' + unidade + '</span>' +
     '<button class="stp" data-a="inc:' + i + ':' + j + ':' + campo + '" aria-label="Aumentar">+</button>' +
     '</div>';
+}
+
+/* Isometria: o campo de tempo divide o espaço com o cronômetro. Tocar em
+   iniciar conta para cima; parar grava os segundos e conclui a série. */
+function campoTempo(i, j, sr){
+  if (cronoAtivo(i, j)){
+    return '<div class="np crono-on"><span class="crono-t" data-crono="' + i + ':' + j + '" data-testid="hold-timer-' + i + '-' + j + '">' +
+      fmtClock(cronoSegundos() * 1000) + '</span>' +
+      '<button class="crono-btn" data-a="crono:' + i + ':' + j + '" data-testid="hold-stop-' + i + '-' + j + '">Parar</button></div>';
+  }
+  return '<div class="np">' +
+    '<input type="number" inputmode="numeric" placeholder="0" aria-label="Segundos" value="' + esc(sr.seg == null ? "" : sr.seg) + '"' +
+    ' data-f="seg" data-i="' + i + '" data-j="' + j + '"><span class="un">seg</span>' +
+    (sr.feita ? "" : '<button class="crono-btn" data-a="crono:' + i + ':' + j + '" data-testid="hold-start-' + i + '-' + j + '">Iniciar</button>') +
+    '</div>';
+}
+function linhaSerie(e, tipo, i, j, sr){
+  const campos = tipo === "cardio" ? campoPasso(i, j, "min", sr.min == null ? "" : sr.min, "min")
+    : tipo === "isometria" ? campoPasso(i, j, "carga", sr.carga, "kg") + campoTempo(i, j, sr)
+    : campoPasso(i, j, "carga", sr.carga, "kg") + campoPasso(i, j, "reps", sr.reps, "reps");
+  return '<div class="serie' + (sr.feita ? " ok" : "") + '">' +
+    '<span class="idx">' + (j + 1) + '</span>' + campos +
+    '<button class="check' + (sr.feita ? " on" : "") + '" data-a="serie:' + i + ':' + j + '" aria-label="Concluir ' +
+    (tipo === "cardio" ? "bloco" : "série") + '">' + ICONS.check + '</button></div>';
 }
 
 /* Um valor digitado numa série quase sempre vale para as seguintes; copiá-lo
@@ -716,9 +749,10 @@ function viewSessao(s){
   h += s.exercicios.map((e, i) => {
     const done = e.series.length > 0 && e.series.every(x => x.feita);
     const ult = ultimaExecucaoContexto(e.exId, s.fichaId, e.itemId);
+    const tipo = tipoNaSessao(e);
     const subir = horaDeSubir(e, s.fichaId);
-    const dica = "Alvo " + alvoTexto(e) + (ult
-      ? " · última: " + ult.series.map(x => nKg(num(x.carga)) + "kg×" + x.reps).join(", ")
+    const dica = "Alvo " + alvoTexto(e) + (ult && ult.series.length
+      ? " · última: " + ult.series.map(x => tipo === "carga" ? nKg(num(x.carga)) + "kg×" + x.reps : textoSerie(x, tipo)).join(", ")
       : " · primeira vez");
     const ei = ESFORCOS.indexOf(e.esforco || "");
 
@@ -733,22 +767,16 @@ function viewSessao(s){
       '</div>' +
       (e.descanso ? '<span class="pill">' + e.descanso + 's</span>' : "") + '</div>' +
 
-      e.series.map((sr, j) =>
-        '<div class="serie' + (sr.feita ? " ok" : "") + '">' +
-        '<span class="idx">' + (j + 1) + '</span>' +
-        campoPasso(i, j, "carga", sr.carga, "kg") +
-        campoPasso(i, j, "reps", sr.reps, "reps") +
-        '<button class="check' + (sr.feita ? " on" : "") + '" data-a="serie:' + i + ':' + j + '" aria-label="Concluir série">' + ICONS.check + '</button>' +
-        '</div>').join("") +
+      e.series.map((sr, j) => linhaSerie(e, tipo, i, j, sr)).join("") +
 
-      '<div class="ex-esf"><span class="lb">Como foi</span>' +
+      (tipo === "cardio" ? "" : '<div class="ex-esf"><span class="lb">Como foi</span>' +
       ESFORCOS.slice(1).map((v, k) =>
         '<button class="ebtn' + (ei === k + 1 ? " on" + (k + 1) : "") + '" data-a="esfex:' + i + ':' + k + '">' +
         esc(v === "limite" ? "No limite" : v.charAt(0).toUpperCase() + v.slice(1)) + '</button>').join("") +
-      '</div>' +
+      '</div>') +
 
-      '<div class="ex-foot"><button data-a="serie-add:' + i + '">+ Série</button>' +
-      (e.series.length > 1 ? '<button data-a="serie-del:' + i + '">− Série</button>' : "") +
+      '<div class="ex-foot"><button data-a="serie-add:' + i + '">+ ' + (tipo === "cardio" ? "Bloco" : "Série") + '</button>' +
+      (e.series.length > 1 ? '<button data-a="serie-del:' + i + '">− ' + (tipo === "cardio" ? "Bloco" : "Série") + '</button>' : "") +
       '</div></div>';
   }).join("");
 
@@ -821,13 +849,13 @@ function viewFichaEdit(){
 /* ---------- PROGRESSO ---------- */
 function viewProgresso(){
   const feitas = concluidas();
-  let h = '<h2>Progresso</h2><p class="sub">Volume, carga e histórico</p>';
+  let h = '<h2>Progresso</h2><p class="sub">Estímulo, volume e histórico</p>';
 
-  h += painelVolume();
+  h += painelCorpo() + painelVolume();
 
   if (!feitas.length){
     return h + '<div class="empty"><p>Nenhum treino concluído ainda.<br>' +
-      'Os gráficos de carga aparecem depois da primeira sessão.</p></div>';
+      'Os gráficos de evolução aparecem depois da primeira sessão.</p></div>';
   }
 
   const comHist = [];
@@ -839,7 +867,7 @@ function viewProgresso(){
 
   if (comHist.length){
     if (state.progEx === null || !comHist.some(c => c.id === state.progEx)) state.progEx = comHist[0].id;
-    h += '<div class="section-label">Carga por exercício</div>' +
+    h += '<div class="section-label">Evolução por exercício</div>' +
       '<div class="card"><select id="progSel" data-f="prog-ex">' +
       comHist.map(c => '<option value="' + c.id + '"' + (c.id === state.progEx ? " selected" : "") + '>' + esc(c.nome) + '</option>').join("") +
       '</select>' + chartCarga(state.progEx) + '</div>';
@@ -851,19 +879,16 @@ function viewProgresso(){
 }
 
 function painelVolume(){
-  const { ini, conta } = volumeSemana(state.semana);
-  const fimLbl = new Date(ini); fimLbl.setDate(fimLbl.getDate() + 6);
+  const { conta, cardioMin } = volumeSemana(state.semana);
   const grupos = GRUPOS.filter(g => conta[g]);
   const maxN = grupos.reduce((a, g) => Math.max(a, conta[g]), 0);
   const escala = Math.max(20, maxN);
 
-  let h = '<div class="card"><div class="wk">' +
-    '<button class="icon-btn" data-a="wk:-1">' + ICONS.prev + '</button>' +
-    '<span class="lbl">' + (state.semana === 0 ? "Esta semana" : "") + ' ' +
-    fmtDataCurta(ini) + ' – ' + fmtDataCurta(fimLbl) + '</span>' +
-    '<button class="icon-btn" data-a="wk:1"' + (state.semana >= 0 ? ' style="opacity:.25"' : "") + '>' + ICONS.next + '</button>' +
-    '</div>';
+  let h = '<div class="card" data-testid="volume-card">';
+  const cardio = cardioMin > 0 ? '<div class="vol"><span class="g trunc">Cardio</span>' +
+    '<span class="grow ex-meta">medido em tempo</span><span class="n" style="width:auto">' + esc(fmtMin(cardioMin)) + '</span></div>' : "";
 
+  if (!grupos.length && cardio) return h + cardio + '</div>';
   if (!grupos.length){
     h += '<div class="ex-meta" style="text-align:center;padding:18px 0">Nenhuma série registrada nesta semana.</div></div>';
     return h;
@@ -878,11 +903,13 @@ function painelVolume(){
       '<span class="n">' + n + '</span></div>';
   }).join("");
 
-  h += '<div class="legend">Séries por grupo muscular. A faixa verde marca a referência de 10 a 20 séries semanais.</div></div>';
+  h += cardio + '<div class="legend">Séries por grupo muscular. A faixa verde marca a referência de 10 a 20 séries semanais.</div></div>';
   return h;
 }
 
 function chartCarga(exId){
+  const tipo = tipoDoEx(exById(exId));
+  if (tipo !== "carga") return chartTempo(exId, tipo);
   const pts = [];
   concluidas().slice().reverse().forEach(s => {
     const e = s.exercicios.find(x => x.exId === exId);
@@ -902,6 +929,28 @@ function chartCarga(exId){
         : "") + '</div>'
     : "";
 
+  return desenhoEvolucao(pts, infoRec);
+}
+
+/* Isometria evolui no maior tempo sustentado; cardio, nos minutos do dia. */
+function chartTempo(exId, tipo){
+  const pts = [], campo = tipo === "cardio" ? "min" : "seg";
+  concluidas().slice().reverse().forEach(s => {
+    const e = s.exercicios.find(x => x.exId === exId);
+    if (!e) return;
+    const v = e.series.filter(x => x.feita && num(x[campo]) > 0).map(x => num(x[campo]));
+    if (!v.length) return;
+    pts.push({ y:tipo === "cardio" ? v.reduce((a, b) => a + b, 0) : Math.max.apply(null, v), data:s.inicio });
+  });
+  if (!pts.length) return desenhoEvolucao(pts, "");
+  const melhor = pts.reduce((a, p) => p.y > a.y ? p : a, pts[0]);
+  const fmt = tipo === "cardio" ? fmtMin : fmtSeg;
+  return desenhoEvolucao(pts, '<div class="row mt" style="gap:10px">' +
+    '<div class="stat"><b>' + esc(fmt(melhor.y)) + '</b><span>' + (tipo === "cardio" ? "Maior dia" : "Maior tempo") + ' · ' + fmtDataCurta(melhor.data) + '</span></div>' +
+    '<div class="stat"><b>' + esc(fmt(pts[pts.length - 1].y)) + '</b><span>Último · ' + fmtDataCurta(pts[pts.length - 1].data) + '</span></div></div>');
+}
+
+function desenhoEvolucao(pts, infoRec){
   if (pts.length < 2){
     return '<div class="ex-meta" style="text-align:center;padding:22px 0">' +
       (pts.length ? "Registre este exercício em pelo menos 2 treinos para ver a evolução." : "Sem dados.") +
@@ -1007,9 +1056,15 @@ function modalNovoEx(){
   openModal("Novo exercício",
     '<div class="stack">' +
     '<div><label for="nxNome">Nome</label><input id="nxNome" type="text" placeholder="Ex: Remada Cavalinho"></div>' +
-    '<div><label for="nxGrupo">Grupo muscular</label><select id="nxGrupo">' +
+    '<div><label for="nxGrupo">Grupo muscular</label><select id="nxGrupo" data-f="ex-grupo" data-p="nx">' +
     GRUPOS.map(g => '<option>' + esc(g) + '</option>').join("") + '</select>' +
     '<div class="ex-meta" style="margin-top:6px">O grupo define para onde as séries contam no volume semanal.</div></div>' +
+    '<div><label for="nxTipo">Como se mede</label><select id="nxTipo">' +
+    TIPOS.map(t => '<option value="' + t + '"' + (t === "carga" ? " selected" : "") + '>' + esc(ROTULO_TIPO[t]) + '</option>').join("") + '</select>' +
+    '<div class="ex-meta" style="margin-top:6px">Isometria registra segundos, com carga opcional. Cardio registra minutos e não conta como série.</div></div>' +
+    '<div><label for="nxRegiao">Região no mapa do corpo</label><select id="nxRegiao">' +
+    '<option value="">Nenhuma</option>' +
+    REGIOES.map(r => '<option' + (r === GRUPOS[0] ? " selected" : "") + '>' + esc(r) + '</option>').join("") + '</select></div>' +
     '<button class="btn btn-primary" data-a="ex-create">Adicionar</button></div>');
   setTimeout(() => { const el = $("nxNome"); if (el) el.focus(); }, 60);
 }
@@ -1035,9 +1090,15 @@ function modalEditarEx(id){
   openModal("Editar exercício",
     '<div class="stack">' +
     '<div><label for="edNome">Nome</label><input id="edNome" type="text" value="' + esc(e.nome) + '"></div>' +
-    '<div><label for="edGrupo">Grupo muscular</label><select id="edGrupo">' +
+    '<div><label for="edGrupo">Grupo muscular</label><select id="edGrupo" data-f="ex-grupo" data-p="ed">' +
     GRUPOS.map(g => '<option' + (g === e.grupo ? " selected" : "") + '>' + esc(g) + '</option>').join("") + '</select>' +
     '<div class="ex-meta" style="margin-top:6px">Define para onde as séries contam no volume semanal.</div></div>' +
+    '<div><label for="edTipo">Como se mede</label><select id="edTipo">' +
+    TIPOS.map(t => '<option value="' + t + '"' + (t === tipoDoEx(e) ? " selected" : "") + '>' + esc(ROTULO_TIPO[t]) + '</option>').join("") + '</select>' +
+    '<div class="ex-meta" style="margin-top:6px">Isometria registra segundos, com carga opcional. Cardio registra minutos e não conta como série.</div></div>' +
+    '<div><label for="edRegiao">Região no mapa do corpo</label><select id="edRegiao">' +
+    '<option value="">Nenhuma</option>' +
+    REGIOES.map(r => '<option' + (r === regiaoDoEx(e) ? " selected" : "") + '>' + esc(r) + '</option>').join("") + '</select></div>' +
     '<button class="btn btn-primary" data-a="ex-save:' + id + '">Salvar</button>' +
     (emUso
       ? '<div class="ex-meta" style="text-align:center">Em uso numa ficha, por isso não pode ser excluído.</div>'
@@ -1055,6 +1116,10 @@ function modalFinalizar(){
     '<div class="stat"><b>' + feitas + '</b><span>Séries feitas</span></div>' +
     '<div class="stat"><b>' + fmtClock(Date.now() - new Date(s.inicio).getTime()) + '</b><span>Duração</span></div></div>' +
     (feitas ? "" : '<div class="nota">Nenhuma série foi marcada como feita.</div>') +
+    '<div><label id="execLabel">Nível de execução</label><div class="exec" role="group" aria-labelledby="execLabel">' +
+    [["bom", "Bom"], ["melhorar", "Melhorar"]].map(([v, t]) => '<button class="ebtn' + (s.execucao === v ? " on" : "") +
+      '" data-a="exec:' + v + '" data-testid="execution-' + v + '" aria-pressed="' + (s.execucao === v) + '">' + t + '</button>').join("") + '</div>' +
+    '<div class="ex-meta" style="margin-top:6px">Com "Melhorar", as evoluções deste treino não escurecem o mapa do corpo.</div></div>' +
     '<div><label for="obs">Observação do dia (opcional)</label>' +
     '<textarea id="obs" placeholder="Ex: dormi mal, ombro incomodou no supino">' + esc(s.observacao || "") + '</textarea></div>' +
     '<button class="btn btn-primary" data-a="sess-finish-ok">Concluir treino</button></div>');
@@ -1092,20 +1157,23 @@ async function iniciarSessao(fichaId){
         incremento: incrementoDoItem(it),
         nome: ex ? ex.nome : "(removido)",
         grupo: ex ? ex.grupo : null,
+        tipo: tipoDoEx(ex),
+        regiao: regiaoDoEx(ex),
         descanso: it.descanso || 0,
         nota: it.nota || "",
         repMin: it.repMin == null ? null : it.repMin,
         repMax: it.repMax == null ? null : it.repMax,
         esforco: "",
-        series: Array.from({ length: Math.max(1, it.series) }, (_, k) => ({
+        series: Array.from({ length: Math.max(1, it.series) }, (_, k) => Object.assign({
           /* sem histórico, começa no piso da faixa: chute conservador, que nunca
              dispara sozinho um "hora de subir" que não aconteceu */
-          reps: ult && ult.series[k] ? ult.series[k].reps
+          reps: tipoDoEx(ex) !== "carga" ? "" : ult && ult.series[k] ? ult.series[k].reps
                                      : (it.repMin == null ? "" : String(it.repMin)),
-          carga: (ult && ult.series[k] ? ult.series[k].carga : it.carga) || "",
+          carga: tipoDoEx(ex) === "cardio" ? "" : (ult && ult.series[k] ? ult.series[k].carga : it.carga) || "",
           feita: false,
           esforco: ""
-        }))
+        }, tipoDoEx(ex) === "isometria" ? { seg:"" } /* o tempo é o de hoje: nunca vem preenchido */
+         : tipoDoEx(ex) === "cardio" ? { min:it.minutos ? String(it.minutos) : "" } : {}))
       };
     })
   };
@@ -1130,6 +1198,7 @@ async function finalizarSessao(){
   s.observacao = obs ? obs.value.trim() : (s.observacao || "");
   s.status = "concluida";
   s.fim = new Date().toISOString();
+  pararCrono();
 
   const novos = [];
   s.exercicios.forEach(e => {
@@ -1156,7 +1225,7 @@ async function descartarSessao(){
   await Promise.all([...gravacoesPendentes]);
   await dbDel("sessoes", s.id);
   limparEstadoSalvamento();
-  stopRest();
+  stopRest(); pararCrono();
   await loadAll();
   render();
 }
@@ -1168,6 +1237,8 @@ function erroNaFicha(d){
   for (const it of d.itens){
     if (!Number.isSafeInteger(it.series) || it.series < 1 || it.series > 1000) return "Informe uma quantidade válida de séries";
     if (it.repMin != null && it.repMax != null && it.repMin > it.repMax) return "O mínimo de repetições não pode superar o máximo";
+    if (it.tempoAlvo != null && !(Number.isSafeInteger(it.tempoAlvo) && it.tempoAlvo > 0)) return "Informe um tempo válido, em segundos";
+    if (it.minutos != null && !(Number.isFinite(it.minutos) && it.minutos > 0)) return "Informe uma duração válida, em minutos";
     const carga = Number(String(it.carga == null ? "" : it.carga).replace(",", "."));
     if (!Number.isFinite(carga) || carga < 0) return "Informe uma carga válida, maior ou igual a zero";
     const incremento = incrementoDoItem(it);
@@ -1260,7 +1331,7 @@ async function importar(file){
   limparEstadoSalvamento();
   stopRest(); closeModal();
   await loadAll();
-  Object.assign(state, { view:"hoje", fichaEdit:null, draft:null, progEx:null, sessOpen:null, semana:0 });
+  Object.assign(state, { view:"hoje", fichaEdit:null, draft:null, progEx:null, sessOpen:null, semana:0, regiao:null });
   limparEdicaoFicha(); resetHistorico();
   render();
   toast("Backup restaurado");
@@ -1310,9 +1381,33 @@ document.addEventListener("click", async ev => {
   if (act === "sess-cancel"){ await executarExclusivo(descartarSessao); return; }
   if (act === "sess-retry"){ await executarExclusivo(garantirSessaoSalva); return; }
 
+  if (act === "exec"){
+    const s = sessaoAtiva(); if (!s) return;
+    s.execucao = s.execucao === a1 ? "" : a1;   /* tocar de novo desmarca */
+    document.querySelectorAll('[data-a^="exec:"]').forEach(b => {
+      const on = b.dataset.a === "exec:" + s.execucao;
+      b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on));
+    });
+    salvarSessao(s, false);
+    return;
+  }
+  if (act === "crono"){
+    const s = sessaoAtiva(); if (!s) return;
+    const i = +a1, j = +a2, exc = s.exercicios[i], sr = exc.series[j];
+    if (cronoAtivo(i, j)){
+      sr.seg = String(Math.max(1, cronoSegundos()));
+      sr.feita = true;
+      pararCrono();
+      if (exc.descanso) startRest(exc.descanso, exc.nome + " · série " + (j + 1));
+      salvarSessao(s, true);
+    } else { stopRest(); iniciarCrono(i, j); render(); }
+    return;
+  }
+  if (act === "reg"){ state.regiao = state.regiao === a1 ? null : a1; render(); return; }
   if (act === "serie"){
     const s = sessaoAtiva(); if (!s) return;
     const exc = s.exercicios[+a1], sr = exc.series[+a2];
+    if (cronoAtivo(+a1, +a2)) pararCrono();
     sr.feita = !sr.feita;
     if (sr.feita && exc.descanso) startRest(exc.descanso, exc.nome + " · série " + (+a2 + 1));
     salvarSessao(s, true);
@@ -1332,7 +1427,7 @@ document.addEventListener("click", async ev => {
     const passo = campo === "carga" ? incrementoDoItem(exc) : 1;
     let novo = num(exc.series[j][campo]) + (act === "inc" ? passo : -passo);
     if (novo < 0) novo = 0;
-    const txt = campo === "carga" ? String(Math.round(novo * 100) / 100) : String(Math.round(novo));
+    const txt = campo === "carga" || campo === "min" ? String(Math.round(novo * 100) / 100) : String(Math.round(novo));
     exc.series[j][campo] = txt;
     const el2 = document.querySelector('input[data-f="' + campo + '"][data-i="' + i + '"][data-j="' + j + '"]');
     if (el2) el2.value = txt;
@@ -1344,14 +1439,19 @@ document.addEventListener("click", async ev => {
     const s = sessaoAtiva(); if (!s) return;
     const exc = s.exercicios[+a1];
     const last = exc.series[exc.series.length - 1] || { reps:"", carga:"" };
-    exc.series.push({ reps:last.reps, carga:last.carga, feita:false, esforco:"" });
+    const tipo = tipoNaSessao(exc);
+    exc.series.push(Object.assign({ reps:last.reps, carga:last.carga, feita:false, esforco:"" },
+      tipo === "isometria" ? { seg:"" } : tipo === "cardio" ? { min:last.min || "" } : {}));
     salvarSessao(s, true);
     return;
   }
   if (act === "serie-del"){
     const s = sessaoAtiva(); if (!s) return;
     const exc = s.exercicios[+a1];
-    if (exc.series.length > 1) exc.series.pop();
+    if (exc.series.length > 1){
+      if (cronoAtivo(+a1, exc.series.length - 1)) pararCrono();
+      exc.series.pop();
+    }
     salvarSessao(s, true);
     return;
   }
@@ -1397,13 +1497,17 @@ document.addEventListener("click", async ev => {
     const nome = ($("nxNome").value || "").trim();
     if (!nome){ toast("Informe o nome"); return; }
     if (EXS.some(e => e.nome.toLowerCase() === nome.toLowerCase())){ toast("Já existe"); return; }
-    await dbAdd("exercicios", { nome, grupo:$("nxGrupo").value });
+    await dbAdd("exercicios", { nome, grupo:$("nxGrupo").value, tipo:$("nxTipo").value, regiao:$("nxRegiao").value || null });
     await loadAll();
     if (state.fichaEdit !== null) modalPicker(nome); else modalBiblioteca();
     return;
   }
   if (act === "ex-pick"){
-    state.draft.itens.push({ exId:+a1, itemId:novoItemId(), incremento:2.5, series:3, repMin:8, repMax:12, carga:"", descanso:60, nota:"" });
+    const tipo = tipoDoEx(exById(+a1));
+    state.draft.itens.push(Object.assign({ exId:+a1, itemId:novoItemId(), incremento:2.5, carga:"", nota:"" },
+      tipo === "cardio" ? { series:1, repMin:null, repMax:null, descanso:0, minutos:20 }
+      : tipo === "isometria" ? { series:3, repMin:null, repMax:null, descanso:60, tempoAlvo:null }
+      : { series:3, repMin:8, repMax:12, descanso:60 }));
     closeModal(); render(); return;
   }
   if (act === "ex-edit"){ modalEditarEx(+a1); return; }
@@ -1412,7 +1516,7 @@ document.addEventListener("click", async ev => {
     const nome = ($("edNome").value || "").trim();
     if (!nome){ toast("Informe o nome"); return; }
     if (EXS.some(x => x.id !== e.id && x.nome.toLowerCase() === nome.toLowerCase())){ toast("Já existe"); return; }
-    await dbPut("exercicios", { id:e.id, nome, grupo:$("edGrupo").value });
+    await dbPut("exercicios", Object.assign({}, e, { nome, grupo:$("edGrupo").value, tipo:$("edTipo").value, regiao:$("edRegiao").value || null }));
     await loadAll(); modalBiblioteca(); render(); toast("Exercício salvo"); return;
   }
   if (act === "ex-del"){
@@ -1461,11 +1565,11 @@ document.addEventListener("input", ev => {
   if (!el) return;
   const f = el.dataset.f, i = +el.dataset.i, j = +el.dataset.j;
 
-  if (f === "carga" || f === "reps"){
+  if (f === "carga" || f === "reps" || f === "seg" || f === "min"){
     const s = sessaoAtiva(); if (!s) return;
     const exc = s.exercicios[i];
     exc.series[j][f] = el.value;
-    propagar(exc, j, f, el.value, i);
+    if (f !== "seg") propagar(exc, j, f, el.value, i);   /* cada série aguenta um tempo diferente */
     salvarSessao(s, false);
     return;
   }
@@ -1475,6 +1579,8 @@ document.addEventListener("input", ev => {
   if (f === "it-repmax"){ state.draft.itens[i].repMax = el.value === "" ? null : Math.max(1, parseInt(el.value, 10) || 1); return; }
   if (f === "it-carga"){ state.draft.itens[i].carga = el.value; return; }
   if (f === "it-incremento"){ state.draft.itens[i].incremento = el.value; return; }
+  if (f === "it-tempo"){ state.draft.itens[i].tempoAlvo = el.value === "" ? null : Math.max(1, parseInt(el.value, 10) || 1); return; }
+  if (f === "it-min"){ state.draft.itens[i].minutos = el.value === "" ? null : num(el.value); return; }
   if (f === "it-desc"){ state.draft.itens[i].descanso = Math.max(0, parseInt(el.value, 10) || 0); return; }
   if (f === "it-nota"){ state.draft.itens[i].nota = el.value; return; }
   if (f === "ex-search"){ $("modalB").innerHTML = listaPicker(el.value); marcarTestIds(); return; }
@@ -1485,6 +1591,13 @@ document.addEventListener("change", ev => {
   const el = ev.target.closest("[data-f]");
   if (!el) return;
   if (el.dataset.f.startsWith("hist-")){ mudarFiltroHistorico(el); return; }
+  if (el.dataset.f === "ex-grupo"){
+    /* trocar o grupo reposiciona tipo e região nos padrões dele; ambos seguem editáveis */
+    const p = el.dataset.p, nome = $(p + "Nome").value;
+    $(p + "Tipo").value = tipoPadrao(nome, el.value);
+    $(p + "Regiao").value = regiaoPadrao(nome, el.value) || "";
+    return;
+  }
   if (el.dataset.f === "prog-ex"){ state.progEx = +el.value; render(); return; }
   if (el.dataset.f === "ficha-dia"){ state.draft.diaSemana = el.value === "" ? null : +el.value; return; }
 });

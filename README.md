@@ -56,6 +56,18 @@ não guardavam a prescrição original, não justificam uma sugestão de aumento
 a ser avaliada após uma nova execução compatível. Adicionar ou retirar séries durante
 o treino não altera o alvo original guardado na sessão nem a ficha.
 
+**Mapa do corpo.** No topo de Progresso, uma silhueta de frente e de costas pinta cada
+região pelo estímulo da semana: verde sem séries, amarelo com parte das séries prescritas,
+vermelho com todas — e mais escuro quando os exercícios da região superaram a execução
+anterior (mais carga, repetições ou segundos). Cinza é região que nenhuma ficha treina.
+Tocar numa região mostra as séries e o que evoluiu. Ao finalizar o treino, um toque
+opcional em **Nível de execução** (*bom* / *melhorar*) decide se as evoluções daquele
+dia contam.
+
+**Isometria e cardio.** Cada exercício tem um tipo. Isometria (prancha) registra segundos
+com um cronômetro que conta até você parar, com carga opcional; a sugestão é passar do
+último tempo ou subir a carga. Cardio registra minutos e não entra na contagem de séries.
+
 **Volume semanal por grupo muscular.** Quantas séries cada grupo levou na semana (segunda a
 domingo), com a faixa de referência de 10 a 20 séries marcada. Cada série conta para o grupo
 principal do exercício: um supino conta para peito, não para tríceps.

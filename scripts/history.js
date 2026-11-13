@@ -57,11 +57,11 @@ const rotuloEsforco = valor => ({ "fácil":"Fácil", limite:"No limite", falhei:
 function detalheExercicioHistorico(e, sessId, i){
   const feitas = e.series.filter(s => s.feita);
   if (!feitas.length) return "";
-  const esforco = rotuloEsforco(e.esforco);
+  const esforco = rotuloEsforco(e.esforco), tipo = tipoNaSessao(e);
   return '<div class="history-exercise" data-testid="history-exercise-' + sessId + '-' + i + '">' +
     '<div class="history-exercise-name" data-testid="history-exercise-name-' + sessId + '-' + i + '">' + esc(e.nome) + '</div>' +
     '<div class="ex-meta" data-testid="history-series-' + sessId + '-' + i + '">' + feitas.map(s =>
-      nKg(num(s.carga)) + ' kg × ' + esc(s.reps) + (!esforco && rotuloEsforco(s.esforco) ? ' (' + esc(rotuloEsforco(s.esforco)) + ')' : '')).join(' · ') + '</div>' +
+      esc(textoSerie(s, tipo)) + (!esforco && rotuloEsforco(s.esforco) ? ' (' + esc(rotuloEsforco(s.esforco)) + ')' : '')).join(' · ') + '</div>' +
     (esforco ? '<div class="ex-meta" data-testid="history-effort-' + sessId + '-' + i + '">Esforço: ' + esc(esforco) + '</div>' : '') + '</div>';
 }
 function cardSessaoHistorico(s){
@@ -73,6 +73,7 @@ function cardSessaoHistorico(s){
     fmtClock(new Date(s.fim) - new Date(s.inicio)) + '</div></div><span class="pill ok" data-testid="history-session-series-count-' + s.id + '">' + seriesFeitas(s) + ' séries</span></button>' +
     '<div id="histDetails-' + s.id + '" class="history-details" data-testid="history-session-details-' + s.id + '"' + (aberto ? '' : ' hidden') + '>' + (aberto ?
       (s.observacao ? '<div class="nota" data-testid="history-session-note-' + s.id + '">' + esc(s.observacao) + '</div>' : '') +
+      (s.execucao ? '<div class="ex-meta" data-testid="history-session-execution-' + s.id + '">Execução: ' + (s.execucao === "bom" ? "boa" : "a melhorar") + '</div>' : '') +
       s.exercicios.map((e, i) => detalheExercicioHistorico(e, s.id, i)).join('') +
       '<button class="btn btn-danger mt" data-a="sess-del:' + s.id + '" data-testid="history-delete-session-' + s.id + '">Excluir este treino</button>' : '') + '</div></article>';
 }

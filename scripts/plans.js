@@ -4,7 +4,8 @@ function assinaturaFicha(d){
   if (!d) return "";
   return JSON.stringify({ nome:d.nome, diaSemana:d.diaSemana == null ? null : d.diaSemana,
     itens:d.itens.map(it => [it.itemId || "", it.exId, it.series, it.repMin == null ? null : it.repMin,
-      it.repMax == null ? null : it.repMax, num(it.carga), it.descanso || 0, it.nota || "", incrementoDoItem(it)]) });
+      it.repMax == null ? null : it.repMax, num(it.carga), it.descanso || 0, it.nota || "", incrementoDoItem(it),
+      it.tempoAlvo == null ? null : it.tempoAlvo, it.minutos == null ? null : it.minutos]) });
 }
 function fichaAlterada(){ return !!state.draft && assinaturaFicha(state.draft) !== baseDaFicha; }
 function limparEdicaoFicha(){ state.fichaEdit = null; state.draft = null; baseDaFicha = ""; }
